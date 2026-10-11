@@ -1,6 +1,6 @@
 # Development workflow / 开发流程
 
-The active implementation is the RK3576 direct MPP path. Root CMake and the generic ABI prototype are historical; see [repository overview](../README.md).
+The active implementation is the RK3576 direct MPP path. Root CMake and the generic ABI prototype are historical; see [repository overview](../README.en.md).
 
 ## Source and board responsibilities
 

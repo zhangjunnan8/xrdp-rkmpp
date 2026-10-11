@@ -1,83 +1,87 @@
 # XRDP CodecBridge — RK3576 MPP
 
-[English](README.md) | [简体中文](README.zh-CN.md)
+[简体中文](README.md) | [English](README.en.md)
 
-Hardware H.264 encoding for **XRDP on Rockchip RK3576**, with a direct Rockchip MPP backend, NEON desktop conversion, and bounded capture/encode overlap. Connect with an unmodified RDP client, including Windows Remote Desktop.
+面向 **Rockchip RK3576 的 XRDP H.264 硬件编码实现**：直接对接 MPP，使用 NEON 优化桌面颜色转换，在客户端流控范围内重叠抓屏与编码。兼容现成的 RDP 客户端，包括 Windows 自带远程桌面。
 
-**Status: hardware-validated on one KICKPI K7, Ubuntu 24.04 arm64, vendor Linux 6.1.75.** This is a board-specific implementation, not an upstream XRDP release or a universal Rockchip driver. Other boards and Ubuntu 22.04/20.04 have not been hardware-validated.
+**状态：已在一台 KICKPI K7、Ubuntu 24.04 arm64、厂商 Linux 6.1.75 上完成硬件验证。** 本项目是板卡专项适配，不是 XRDP 官方发行版，也不是通用 Rockchip 驱动。Ubuntu 22.04/20.04 及其他开发板尚未完成硬件验证。
 
-## Encoding path
+## 开发说明
+
+本项目针对 RK3576 的适配与优化工作，大部分由 **GPT-6 Astra** 在维护者指导下完成，包括代码实现、性能优化、测试工具和文档整理。此说明针对本项目新增工作；XRDP、xorgxrdp、Rockchip MPP 等上游项目的署名与许可保持不变。
+
+## 实现路径
 
 ```text
-X11 desktop → xorgxrdp capture → BGRA-to-NV12 (AArch64 NEON)
-            → XRDP MPP backend → Rockchip MPP → RKVENC → H.264 AVC420 → RDP client
+X11 桌面 → xorgxrdp 抓屏 → BGRA 转 NV12（AArch64 NEON）
+         → XRDP MPP 后端 → Rockchip MPP → RKVENC → H.264 AVC420 → RDP 客户端
 ```
 
-RKVENC is the dedicated video encoder. Mali GPU utilization does not indicate its activity. Desktop rendering and some memory transfers still use the CPU.
+RKVENC 是专用视频编码单元。Mali GPU 利用率不能用于判断它是否工作；桌面绘制与部分内存传输仍会消耗 CPU。
 
-- Direct XRDP H.264 callbacks; no CodecBridge plugin loader in this path.
-- Persistent DMA input with damaged-region updates and explicit cache synchronization.
-- Capture overlaps encoding after source-buffer ownership transfers, retaining real client ACKs and the upstream in-flight frame limit.
-- Dynamic resolution, idle refresh, SPS/PPS at IDR frames, and explicit x264 recovery after hardware failure.
-- Strict hardware validation mode; no silent fallback on MPP failure.
-- Pinned, hash-checked **XRDP 0.10.6.1 / xorgxrdp 0.10.5**, native builds and separate versioned installation prefixes.
+- 直接接入 XRDP 的 H.264 回调，当前链路不使用通用 CodecBridge 插件加载器。
+- 持久化、带缓存同步的 DMA 输入，只更新发生变化的区域。
+- 输入所有权转移后允许抓屏与编码重叠，保留真实客户端 ACK 和上游在途帧数限制。
+- 动态分辨率、闲置后刷新、IDR 携带 SPS/PPS，以及硬件失败后的明确 x264 回退与画面恢复。
+- 严格模式用于验收，MPP 失败时不能静默回退。
+- 固定并校验 **XRDP 0.10.6.1 / xorgxrdp 0.10.5** 官方归档，原生构建并使用独立版本目录。
 
-## Measured performance
+## 性能实测
 
-Same board, 2560×1440, QP 18, 16 ms capture interval, separate LAN FreeRDP client. **Both columns already use MPP hardware encoding.** The comparison measures NEON conversion, reduced copying and pipeline overlap together.
+同一开发板、2560×1440、QP 18、16 ms 抓屏间隔、独立局域网 FreeRDP 客户端。**两组均已使用 MPP 硬编码**；表格比较 NEON、减少复制及抓屏/编码重叠的组合收益。
 
-| Synthetic desktop workload | Initial MPP path | Optimized MPP path | Gain |
+| 合成桌面负载 | 初始 MPP 路径 | 优化 MPP 路径 | 提升 |
 |---|---:|---:|---:|
-| Window movement | 19.834 FPS | 35.889 FPS | 81% |
-| Rapid color changes | 25.111 FPS | 49.445 FPS | 97% |
-| Movement + color changes | 20.278 FPS | 36.500 FPS | 80% |
+| 窗口移动 | 19.834 FPS | 35.889 FPS | 81% |
+| 快速变色 | 25.111 FPS | 49.445 FPS | 97% |
+| 移动加变色 | 20.278 FPS | 36.500 FPS | 80% |
 
-These are **server encoded-frame rates**, not monitor presentation FPS or input-to-display latency. One matched run per configuration; no confidence intervals. The separate 1080p x264/MPP callback comparison, quality differences, methodology and machine-readable data are in [Performance](docs/performance.md).
+指标是**服务端实际编码速率**，不是显示器呈现帧率或鼠标到画面的端到端延迟。每组为一次同条件测试，没有统计置信区间。另有 1080p 的 x264/MPP 编码回调对照，画质与码率并不相同；完整方法、解释和可机读数据见 [性能对比](docs/performance.md)。
 
-## Build and install
+## 构建与部署
 
-Start with the [English getting-started guide](docs/getting-started.md) or the [complete fresh-board installation guide / 新板安装教程](docs/new-board-install.md) (Chinese). They cover native builds, a separate service on TCP 3391, device permissions and actual RDP validation.
+从 [全新开发板安装教程](docs/new-board-install.md) 开始；另有 [英文入门说明](docs/getting-started.md)。教程覆盖依赖、原生编译、独立 3391 服务、设备权限与真实 RDP 验收。
 
-Prerequisites: a working RK3576 BSP/MPP stack, matching Xorg development headers, x264/OpenH264 development packages and an X11 desktop. An ordinary ARM Ubuntu image alone is insufficient.
+需要可用的 RK3576 BSP/MPP、匹配的 Xorg 开发头文件、x264/OpenH264 开发包及 X11 桌面。普通 Ubuntu ARM 镜像不一定具备这些条件。
 
-The native entry points are `rk3576/build.sh` and `rk3576/build-xorg.sh`. They stage files without installing or restarting services. Root CMake builds the **historical generic prototype**, not this XRDP integration. Build on the target board from a clean Git checkout; see the guides for pinned archive URLs, checksums and commands.
+原生构建入口是 `rk3576/build.sh` 和 `rk3576/build-xorg.sh`，只生成 stage，不安装或重启系统服务。根目录 CMake 构建的是**历史通用原型**，不是 RK3576 接入。在板端干净 Git 检出中构建，归档地址、校验值和命令见教程。
 
-After installation, select `h264_encoder = "MPP"` in the instance's `gfx.toml` and set these XRDP service environment variables:
+部署后在该实例 `gfx.toml` 中选择 `h264_encoder = "MPP"`，并设置 XRDP 服务环境变量：
 
-| Setting | Purpose |
+| 配置 | 含义 |
 |---|---|
-| `XRDP_MPP_QP=18` | Tested fixed-QP LAN setting; supported range 10–40 |
-| `XRDP_MPP_DIRECT=1` | Update persistent DMA input directly; source default is off |
-| `XRDP_MPP_PIPELINE=1` | Bounded capture/encode overlap; source default is off |
-| `XRDP_MPP_STRICT=1` | Hardware validation; use `0` for explicit software fallback in daily use |
+| `XRDP_MPP_QP=18` | 已测试的局域网固定 QP；支持 10–40 |
+| `XRDP_MPP_DIRECT=1` | 直接更新持久化 DMA 输入；源码默认关闭 |
+| `XRDP_MPP_PIPELINE=1` | 有界的抓屏/编码重叠；源码默认关闭 |
+| `XRDP_MPP_STRICT=1` | 硬件验收；日常可设 `0`，允许有日志的软件回退 |
 
-Verify **`first hardware frame complete` for the current connection** and no runtime `switching to x264`. A config setting alone proves nothing; clients must negotiate H.264. See [implementation details](rk3576/README.md).
+必须确认**本次连接**出现 `first hardware frame complete`，运行期没有 `switching to x264`。仅配置 MPP 不能证明硬编码，客户端还必须协商 H.264。详见 [实现说明](rk3576/README.md)。
 
-## Scope and limitations
+## 使用边界
 
-- H.264 AVC420 / 4:2:0, BT.709 full range, Baseline, no B frames; no AVC444.
-- Single-display desktop validation; multi-monitor and concurrent users are unqualified.
-- No RGA conversion, end-to-end zero-copy or GPU desktop rendering acceleration.
-- Fixed QP; no WAN adaptive bitrate. 4K60 and universal 60 FPS are not demonstrated.
-- A five-minute resize run is not a multi-day reliability test. ASan could not start on the tested board's 39-bit VA kernel; UBSan and explicit memory checks were used.
-- Lab helpers require explicit site configuration and isolated sessions; they are not a general-purpose deployment manager.
+- H.264 AVC420 / 4:2:0、BT.709 全范围、Baseline、无 B 帧；没有 AVC444。
+- 主要验收单屏桌面，多屏与多用户并发尚未验收。
+- 没有 RGA 转换、端到端零拷贝或 GPU 桌面渲染加速。
+- 固定 QP，没有广域网自适应码率；没有证明 4K60 或所有负载 60 FPS。
+- 五分钟分辨率轮换不等于多日稳定性验证。测试板的 39 位虚拟地址内核无法启动 ASan，实际使用 UBSan 和显式内存检查。
+- 实验工具需要显式填写现场配置，并使用隔离会话，不是通用部署管理器。
 
-See [Known limitations / 已知限制](docs/known-limitations.md) for the complete qualification boundary.
+完整支持矩阵见 [已知限制](docs/known-limitations.md)。
 
-## Repository map
+## 目录与文档
 
-| Path | Purpose |
+| 路径 | 用途 |
 |---|---|
-| `rk3576/` | Active MPP encoder, upstream integration, NEON conversion, builds and tests |
-| `docs/performance.md` | Benchmarks, methodology and interpretation |
-| `docs/validation/` | Dated evidence and historical build identifiers |
-| `docs/unattended-benchmark.md` | Isolated workload and LAN test setup |
-| `src/`, `include/`, `backends/`, root CMake | Historical generic C ABI prototype; unused by this integration |
+| `rk3576/` | 当前 MPP 编码器、上游接入、NEON、构建与测试 |
+| `docs/performance.md` | 性能、测试方法及解读 |
+| `docs/validation/` | 带日期的验收记录与原始构建标识 |
+| `docs/unattended-benchmark.md` | 合成负载与独立 LAN 客户端配置 |
+| `src/`、`include/`、`backends/`、根 CMake | 历史通用 C ABI 原型；不参与当前硬编码路径 |
 
-The public snapshot omits private development history. Build identifiers in dated reports describe the original tested artifacts; they need not resolve in the public snapshot. See [release provenance and privacy review](docs/public-release.md).
+公开快照不携带私有开发历史。验收文档中的构建 SHA 标识原实测产物，不一定能在公开仓库中检出。对应关系见 [发布来源与隐私检查](docs/public-release.md)。
 
-## Contributing and license
+## 贡献与许可
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for environment reporting and validation. Submit sanitized logs only; never attach credentials, private desktop captures or site configuration.
+提交问题或改动前请读 [CONTRIBUTING.md](CONTRIBUTING.md)，提供系统、BSP、MPP、客户端及测试条件，日志须脱敏。不要上传密码、私钥、真实办公桌面截图或现场配置。
 
-Project-authored additions use **Apache-2.0**; see [LICENSE](LICENSE). Retain upstream attribution and dependency licenses. [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) lists sources and the x264 dependency's separate licensing. No BSP, SDK binaries, private keys or prebuilt release binaries are bundled.
+项目新增代码采用 **Apache-2.0**，完整文本见 [LICENSE](LICENSE)。上游及依赖保留各自许可与署名；来源和 x264 的独立许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。本仓库不附带 BSP、SDK 二进制、私钥或预编译发行包。

@@ -1,6 +1,6 @@
 # RK3576 direct MPP integration / 直接接入
 
-See [English overview](../README.md) / [中文概览](../README.zh-CN.md). This directory contains the active XRDP integration; it neither builds nor loads `libcodecbridge`.
+See [English overview](../README.en.md) / [中文概览](../README.md). This directory contains the active XRDP integration; it neither builds nor loads `libcodecbridge`.
 
 ## Build and first installation
 
