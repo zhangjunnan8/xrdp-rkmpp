@@ -1,0 +1,12 @@
+{
+  "board_host": "192.0.2.10",
+  "board_hostname": "rk3576-test",
+  "board_repo": "/home/desktop/src/xrdp-codecbridge",
+  "board_build_root": "/home/desktop/build/xrdp-rk3576-lab",
+  "board_results_root": "/home/desktop/build",
+  "client_host": "192.0.2.20",
+  "client_user": "benchmark",
+  "client_ip": "192.0.2.20",
+  "client_base": "/home/benchmark/xrdp-codecbridge-client",
+  "rdp_user": "desktop"
+}

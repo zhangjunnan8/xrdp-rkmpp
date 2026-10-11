@@ -1,0 +1,50 @@
+# Build and dependency output
+/build/
+/out/
+/dist/
+/third_party/
+/vendor/
+CMakeUserPresets.json
+compile_commands.json
+*.o
+*.a
+*.so
+*.so.*
+*.dll
+*.exe
+*.pdb
+
+# Local machine state, credentials and captured sessions
+/.local/
+/secrets/
+/artifacts/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa
+id_ed25519
+*.log
+*.xwd
+
+# Editor and Python caches
+.vs/
+.idea/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+
+# Private benchmark configuration and release packaging
+/lab.json
+/site.json
+*.p12
+*.pfx
+*.ppk
+*.kdbx
+*.pcap
+*.pcapng
+*.bundle
+*.tar.gz
+*.zip

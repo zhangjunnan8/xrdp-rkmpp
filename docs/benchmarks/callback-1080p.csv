@@ -1,0 +1,5 @@
+workload,encoder,mean_ms,p95_ms,cpu_ms_120_frames,compressed_bytes,psnr_db
+partial,x264,26.006,27.56,5239.654,100989,53.709
+partial,mpp_qp18,8.156,8.343,158.86,105362,56.683
+full,x264,38.275,39.568,7660.593,1524544,53.099
+full,mpp_qp18,11.693,11.904,591.584,3129830,57.392

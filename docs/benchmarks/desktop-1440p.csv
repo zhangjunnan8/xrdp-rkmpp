@@ -1,0 +1,4 @@
+workload,baseline_encoded_fps,optimized_encoded_fps,baseline_capture_ms,optimized_capture_ms,baseline_encode_ms,optimized_encode_ms
+movement,19.834,35.889,18.908,3.955,24.375,19.224
+color,25.111,49.445,11.75,2.483,21.504,17.714
+mixed,20.278,36.5,17.042,3.695,24.599,19.519

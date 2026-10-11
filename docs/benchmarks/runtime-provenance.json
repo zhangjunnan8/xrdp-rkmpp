@@ -1,0 +1,43 @@
+{
+  "measured_artifact_id": "071e67e75c73c6d02e0b59de4e14510f48b4d205",
+  "comparison": "SHA-256 after CRLF-to-LF normalization; no compiled-binary equivalence claim",
+  "files": [
+    {
+      "path": "rk3576/xrdp_encoder_mpp.c",
+      "original_sha256_lf": "9300aff27477b027286af22e12e82473811725c4f84b71ece3bcb7aa60d00a0d",
+      "public_sha256_lf": "9300aff27477b027286af22e12e82473811725c4f84b71ece3bcb7aa60d00a0d",
+      "byte_equal_after_lf_normalization": true
+    },
+    {
+      "path": "rk3576/xrdp_encoder_mpp.h",
+      "original_sha256_lf": "e1f61fdba78b1bc2728fcf524b3c9f319b536456550f466dc72b4401b73708f0",
+      "public_sha256_lf": "e1f61fdba78b1bc2728fcf524b3c9f319b536456550f466dc72b4401b73708f0",
+      "byte_equal_after_lf_normalization": true
+    },
+    {
+      "path": "rk3576/xrdp_mpp_pipeline.inc",
+      "original_sha256_lf": "0a49295628b30d3eaaf4e975412eaee6ed5beaf61bb9828fba61e5982eb1acdf",
+      "public_sha256_lf": "0a49295628b30d3eaaf4e975412eaee6ed5beaf61bb9828fba61e5982eb1acdf",
+      "byte_equal_after_lf_normalization": true
+    },
+    {
+      "path": "rk3576/prepare.py",
+      "original_sha256_lf": "6f5b2cc561f136bd6ec36db05e0d90e1a2d48ce89b3d441f0745d821e60056a4",
+      "public_sha256_lf": "6f5b2cc561f136bd6ec36db05e0d90e1a2d48ce89b3d441f0745d821e60056a4",
+      "byte_equal_after_lf_normalization": true
+    },
+    {
+      "path": "rk3576/nv12-neon.c",
+      "original_sha256_lf": "a827a0e2b0f8e0e1a9b5af0cd274b4dfe1b77b4b0ac2bf49e16093a977a4fa78",
+      "public_sha256_lf": "7bc400f5b153c8d8d96fca57990083de66f5b3f6fd07b1f0331dd4a71a5a84c5",
+      "byte_equal_after_lf_normalization": false,
+      "change": "Leading license/attribution comment only; remaining bytes identical after LF normalization"
+    },
+    {
+      "path": "rk3576/desktop-motion.c",
+      "original_sha256_lf": "55492d91b319fd9fc0f9edbde7e572d79cdec3b111568e4942f8f0221ce04c56",
+      "public_sha256_lf": "55492d91b319fd9fc0f9edbde7e572d79cdec3b111568e4942f8f0221ce04c56",
+      "byte_equal_after_lf_normalization": true
+    }
+  ]
+}

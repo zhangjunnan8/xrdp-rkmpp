@@ -1,0 +1,11 @@
+XRDP CodecBridge — RK3576 direct MPP integration
+
+Project additions: Apache License 2.0 (see LICENSE).
+
+Contains interface adaptation based on XRDP xrdp_encoder_x264.c,
+Copyright (C) Jay Sorg 2016-2024, Apache License 2.0.
+
+Conversion semantics and generated scalar reference derive from xorgxrdp
+module/rdpCapture.c, Copyright 2014 Laxmikant Rashinkar,
+Copyright 2014-2017 Jay Sorg, under the X11 permission license.
+See LICENSES/xorgxrdp.txt and THIRD_PARTY_NOTICES.md.
