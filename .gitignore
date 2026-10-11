@@ -1,5 +1,6 @@
 # Build and dependency output
 /build/
+/build-*/
 /out/
 /dist/
 /third_party/

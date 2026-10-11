@@ -13,6 +13,6 @@ Project-authored additions use Apache-2.0, consistent with the pre-existing RK35
 
 `rk3576/xrdp_encoder_mpp.c` adapts the XRDP x264 encoder interface (Copyright Jay Sorg 2016–2024), with that attribution retained in its header. `rk3576/nv12-neon.c` reproduces the conversion semantics from xorgxrdp `module/rdpCapture.c` (Copyright 2014 Laxmikant Rashinkar; Copyright 2014–2017 Jay Sorg). The extraction script now retains the original notice in the generated scalar-reference source as well.
 
-Both build scripts verify exact upstream archive SHA-256 values. Their upstream license files remain in generated build trees. Before distributing compiled combinations, review the actual linked components and their redistribution requirements separately; this release is source-only.
+Root CMake fetches exact upstream Git commits, including XRDP's pinned submodules; the revisions are listed in [cmake/UpstreamVersions.cmake](cmake/UpstreamVersions.cmake). Legacy archive build scripts still verify exact SHA-256 values. Upstream license files remain in generated build trees. Before distributing compiled combinations, review the actual linked components and their redistribution requirements separately; this release is source-only.
 
 新增代码的 Apache-2.0 不会覆盖上游与依赖的许可。尤其 x264 开源版本采用 GPL；不要把整个链接后的二进制简单标成“纯 Apache-2.0”。本次只发布源码，不包含 SDK 或预编译发行包。

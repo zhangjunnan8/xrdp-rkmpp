@@ -7,7 +7,7 @@
 | 项目 | 本教程使用的值 |
 |---|---|
 | 源码目录 / 分支 | `$HOME/src/xrdp-rkmpp` / GitHub `main` |
-| XRDP / Xorg 构建参数 | `xrdp-rkmpp` / `xrdp-rkmpp-xorg` |
+| 构建入口 | 根目录 CMake，默认构建 XRDP + xorgxrdp；第三方源码放入 `build/_deps/` |
 | 安装目录 | `/opt/xrdp-rkmpp/<SHA>`、`/opt/xrdp-rkmpp-xorg/<SHA>` |
 | 配置 / 日志 / 运行目录 | `/etc/xrdp-rkmpp/xrdp`、`/var/log/xrdp-rkmpp`、`/run/xrdp-rkmpp` |
 | systemd 服务 | `xrdp-rkmpp`、`xrdp-rkmpp-sesman` |
@@ -70,7 +70,7 @@ dpkg-query -W xserver-xorg-dev librockchip-mpp1 librockchip-mpp-dev || true
 apt-cache policy xserver-xorg-core xserver-xorg-dev librockchip-mpp1 librockchip-mpp-dev
 XORG_VERSION=$(dpkg-query -W -f='${Version}' xserver-xorg-core)
 
-BUILD_DEPS=(build-essential git ca-certificates curl autoconf automake
+BUILD_DEPS=(build-essential cmake git ca-certificates autoconf automake
   libtool pkg-config libssl-dev libpam0g-dev libx11-dev libxfixes-dev
   libxrandr-dev libjpeg-dev libfuse3-dev libpixman-1-dev libx264-dev
   libopenh264-dev xorg-dev "xserver-xorg-dev=$XORG_VERSION" libepoxy-dev libgbm-dev
@@ -100,64 +100,44 @@ test -x /usr/bin/dbus-run-session
 
 上游本次构建要求 OpenH264 >= 2.0、FUSE3 >= 3.1；MPP 头文件应能通过 `<rockchip/rk_mpi.h>` 等路径引用。厂商头文件缺失或接口不齐时，先解决 SDK，不能仅复制 `.so`。
 
-## 4. 获取 GitHub main 与固定的上游发行包
+## 4. 获取公开仓库
 
-下方使用真实公开仓库，无需 GitHub 账号或 SSH 私钥。源码和下载目录统一使用 `xrdp-rkmpp`；源码目录应尚不存在，已有检出请使用第 10 节的更新步骤。克隆 `main` 后固定到实际取得的提交，构建目录与安装目录均由该提交 SHA 生成，不依赖历史测试报告中的私有提交。
+在新板的普通用户终端执行；源码目录应尚不存在，已有检出请使用第 10 节的更新步骤。公开仓库无需账号或 SSH 私钥：
 
 ```bash
-mkdir -p "$HOME/src" "$HOME/downloads/xrdp-rkmpp"
-REPOSITORY_URL=https://github.com/zhangjunnan8/xrdp-rkmpp.git
-RELEASE_BRANCH=main
-git clone --branch "$RELEASE_BRANCH" --single-branch --no-tags \
-  "$REPOSITORY_URL" \
-  "$HOME/src/xrdp-rkmpp"
+mkdir -p "$HOME/src"
+git clone --single-branch --no-tags --branch main \
+  https://github.com/zhangjunnan8/xrdp-rkmpp.git "$HOME/src/xrdp-rkmpp"
 cd "$HOME/src/xrdp-rkmpp"
 REPO=$PWD
 git status --short
 test -z "$(git status --porcelain)"
 SHA=$(git rev-parse HEAD)
 git switch --detach "$SHA"
-test -z "$(git status --porcelain)"
 printf 'Build source: %s\n' "$SHA"
-
-DOWNLOADS="$HOME/downloads/xrdp-rkmpp"
-curl -fL --retry 3 -o "$DOWNLOADS/xrdp-0.10.6.1.tar.gz" \
-  https://github.com/neutrinolabs/xrdp/releases/download/v0.10.6.1/xrdp-0.10.6.1.tar.gz
-curl -fL --retry 3 -o "$DOWNLOADS/xorgxrdp-0.10.5.tar.gz" \
-  https://github.com/neutrinolabs/xorgxrdp/releases/download/v0.10.5/xorgxrdp-0.10.5.tar.gz
-(
-  cd "$DOWNLOADS"
-  sha256sum -c <<'SUMS'
-2f7beb5a3b2529c8d72dc0df9b8cdca31ab0e0c14d1e3421210f5e6ec0ab3b75  xrdp-0.10.6.1.tar.gz
-a5d03435f0ef48bf3d5010e63d9264f2334e7063cba3ecd8d4c0a15616a4f712  xorgxrdp-0.10.5.tar.gz
-SUMS
-)
 ```
 
-下载的是 Release 附件，不是 GitHub 自动生成的 “Source code (tar.gz)”。构建脚本会再次校验 SHA-256，不接受其他上游版本。
+## 5. 根目录 CMake 编译
 
-板端无法解析或访问 GitHub 时，在可联网电脑下载上述两个附件，再通过 SCP/SFTP 上传到新板的 `$HOME/downloads/xrdp-rkmpp/`，跳过两条 `curl` 命令，但仍须在板端执行同样的 SHA-256 校验。不要用来源不明或版本不同的包替代。
-
-## 5. 原生编译两部分，不启动服务
+完成第 3 节的系统依赖后，只需两个构建命令。CMake 自动浅拉取固定 Git 提交的 XRDP 0.10.6.1、其固定子模块及 xorgxrdp 0.10.5，应用本项目补丁，并按顺序编译和暂存：
 
 ```bash
-XRDP_BUILD="$HOME/build/xrdp-rkmpp/$SHA"
-XORG_BUILD="$HOME/build/xrdp-rkmpp-xorg/$SHA"
-sh "$REPO/rk3576/build.sh" \
-  "$DOWNLOADS/xrdp-0.10.6.1.tar.gz" "$XRDP_BUILD" xrdp-rkmpp
-PREFIX=$(cat "$XRDP_BUILD/install-prefix")
+cmake -S "$REPO" -B "$REPO/build" -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build "$REPO/build" --parallel 4
 
-XRDP_CFLAGS="-I$XRDP_BUILD/stage$PREFIX/include" \
-  sh "$REPO/rk3576/build-xorg.sh" \
-  "$DOWNLOADS/xorgxrdp-0.10.5.tar.gz" "$XORG_BUILD" xrdp-rkmpp-xorg
-XPREFIX=$(cat "$XORG_BUILD/install-prefix")
+# 只有两部分构建均成功后才生成此文件，供第 6 节安装使用。
+source "$REPO/build/install-env.sh"
 cat "$XRDP_BUILD/pipeline-test.log"
 cat "$XORG_BUILD/conversion-test.log" "$XORG_BUILD/conversion-ubsan.log"
 ```
 
-**首次构建时传入 `XRDP_CFLAGS`。** 它指定本轮 stage 的 XRDP 头文件，空白板不需要先安装旧版 XRDP。构建脚本不再覆盖外部 pkg-config 搜索路径；如果使用已安装的匹配开发包，也可按上游方式设置 pkg-config。
+等价的传统写法是 `mkdir build && cd build`、`cmake ..`、`cmake --build .`。默认同时构建 XRDP 和 xorgxrdp，不需要自己下载 tar.gz、设置 `XRDP_CFLAGS` 或依次执行两个旧构建脚本。
 
-两份源码编译为 `/opt/.../<SHA>` 对应的 stage，尚未写入系统 `/opt`。Xorg 模块的安装目录已经显式重定向，不覆盖 `/usr/lib/xorg/modules`。构建目录必须不存在；失败后先查看 `configure.log` / `build.log`，用新的目录重试，不在旧 stage 上混合构建。
+产物包括 `build/bin/xrdp`、`build/bin/xrdp-sesman` 的快捷链接，以及 `build/xrdp/stage/` 和 `build/xorgxrdp/stage/` 中的完整安装树。Xorg 模块位于后者的 `opt/xrdp-rkmpp-xorg/<SHA>/lib/xorg/modules/`。这些是针对当前板端依赖编译的程序，不是可以随意复制到不同系统的便携包；启动桌面还需以下系统安装步骤。
+
+CMake 会检查 Linux/ARM64、MPP 和 Xorg 等开发依赖。它使用厂商已安装的 BSP/MPP，不下载或替换内核、Mali 或 MPP 驱动。上游仍通过自己的 Autotools 构建，由 CMake 统一调度；两个子工程内部各使用 4 个 Make 编译任务，可用 `-DXRDP_RKMPP_JOBS=2` 调整。
+
+构建仅写入 `build/`，不会写入系统 `/opt`、安装软件包或启动服务。可以重复构建；集成源码或补丁变更后，会从未修改的上游检出重建生成目录。详细产物、离线镜像和只检查源码模式见 [CMake 构建指南](building.md)。目前该新入口已做本地流程检查，**尚未在 RK3576 上重新完成原生构建**，不要把源码获取/补丁通过当作硬件验收通过。
 
 ## 6. 首次安装独立 3391 服务
 
@@ -330,7 +310,7 @@ echo 'Files installed. Services have NOT been started or enabled.'
 INSTALL
 ```
 
-安装块不是可反复执行的升级脚本；中途失败时保留输出、检查已写入文件，不要删除冲突目录强行重跑。它使用新生成的本机密钥，并在 `/etc/xrdp-rkmpp/xrdp/source-commit` 记录安装来源。上述目录名与两个构建脚本的显式参数配套，不要只修改 service 名或某一处路径。
+安装块不是可反复执行的升级脚本；中途失败时保留输出、检查已写入文件，不要删除冲突目录强行重跑。它使用新生成的本机密钥，并在 `/etc/xrdp-rkmpp/xrdp/source-commit` 记录安装来源。上述目录名与 CMake 固定的公开安装路径配套，不要只修改 service 名或某一处路径。
 
 ## 7. 验证硬件权限、编码与启动
 
@@ -431,11 +411,10 @@ git log -1 --oneline "$NEW_SHA"
 git diff --stat HEAD "$NEW_SHA"
 git switch --detach "$NEW_SHA"
 SHA=$(git rev-parse HEAD)
-DOWNLOADS="$HOME/downloads/xrdp-rkmpp"
 printf 'Source ready for build: %s\n' "$SHA"
 ```
 
-按第 5 节在新目录中构建两部分。若仍是已经构建的同一 SHA，不要清空已有构建目录重复安装。首次安装器会拒绝覆盖现有实例；目前没有经空白板与升级场景完整验收的一键升级工具。
+按第 5 节重新运行 CMake 配置和构建，然后重新载入 `build/install-env.sh`；当前 SHA 会用于两部分的版本目录。首次安装器会拒绝覆盖现有实例；目前没有经空白板与升级场景完整验收的一键升级工具。
 
 切换已安装版本前，安排会话中断窗口并备份 `/etc/xrdp-rkmpp/`、两个 unit 及其 drop-in 配置。需要成对部署新 XRDP/Xorg 前缀，更新两个 unit 的 `ExecStart`、`sesman.ini` 中的 Xorg `-modulepath` 和动画程序，保留现有证书、PAM、用户与日常配置；先完成独立测试，再重新执行实际 RDP 验收。保留旧前缀和配置备份供回退，验收完成后更新 `source-commit`。不要用首次安装块或旧实验升级脚本覆盖运行中的实例。
 
@@ -444,12 +423,12 @@ printf 'Source ready for build: %s\n' "$SHA"
 | 现象 | 优先检查 |
 |---|---|
 | `rockchip_mpp` 找不到/同步函数未定义 | 厂商 MPP 开发包、头文件与运行库一致性；不要升级系统 glibc 绕过 |
-| 找不到 xrdp.pc 或报 XRDP 版本不足 | 第 5 节是否传入本轮 stage 的 `XRDP_CFLAGS` |
+| 找不到 xrdp.pc 或报 XRDP 版本不足 | 检查 `build/xrdp/` 是否成功生成 stage；CMake 自动传递本轮头文件，查看 `build/xorgxrdp/configure.log` |
 | 登录后黑屏或马上退出 | `/var/log/xrdp-rkmpp/sesman.log`、用户 `~/.xorgxrdp.50.log`、Xfce/dbus 是否安装 |
 | Xorg 模块 ABI/符号错误 | 是否使用同一板端的 Xorg SDK 构建；模块路径是否指向当前 `$XPREFIX` |
 | MPP 初始化失败或回退 x264 | 设备权限、BSP/MPP 匹配、对应新连接日志；严格模式下先修复再继续 |
 | 3391 无法访问 | systemd 状态、监听、实际 IP、局域网防火墙；SSH 正常不等于 RDP 端口已放行 |
-| `Unknown deployment namespace` 或 Xorg 前缀仍是旧实验路径 | 使用包含公开安装修正的 GitHub `main`；第 5 节两个构建命令的第三个参数分别是 `xrdp-rkmpp`、`xrdp-rkmpp-xorg` |
+| `Native ARM64 Linux is required` | 完整构建应在开发板原生执行；普通工作站只支持 `XRDP_RKMPP_FETCH_ONLY=ON` 源码检查模式 |
 
 停用本次服务（会断开本次桌面）：
 
@@ -465,7 +444,7 @@ sudo systemctl disable --now xrdp-rkmpp xrdp-rkmpp-sesman
 
 原版教程在 2026-10-11 完成了 Bash/Python 示例检查、基于历史验收产物的配置生成、unit 校验和 stage 头文件配置验证。那些记录使用的是当时的实验安装名称，不能当作当前公开名称已经在新板部署成功的证明。
 
-本次公开安装修正的检查范围见 [公开安装参数校验](validation/2026-10-11-public-install.md)。构建参数、配置生成与链接在本地校验；未在第二块空白板完成全流程安装，没有重启现有服务，也没有 Ubuntu 22.04/20.04 的硬件运行记录。
+手工安装参数的检查范围见 [公开安装参数校验](validation/2026-10-11-public-install.md)，新 CMake 入口见 [CMake 校验记录](validation/2026-10-11-cmake-build.md)。构建参数、配置生成与链接在本地校验；未在第二块空白板完成全流程安装，没有重启现有服务，也没有 Ubuntu 22.04/20.04 的硬件运行记录。
 
 - [XRDP 0.10.6.1 官方发行版](https://github.com/neutrinolabs/xrdp/releases/tag/v0.10.6.1)、[xorgxrdp 0.10.5 官方发行版](https://github.com/neutrinolabs/xorgxrdp/releases/tag/v0.10.5)。
 - [xorgxrdp 上游构建说明](https://github.com/neutrinolabs/xorgxrdp/tree/v0.10.5)：支持用 `XRDP_CFLAGS` 指定头文件而不预先安装 XRDP。

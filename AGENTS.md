@@ -2,6 +2,8 @@
 
 This repository's active implementation is the RK3576 direct MPP integration in `rk3576/`. The generic prototype in `src/`, `include/` and `backends/` is historical and is not part of the running XRDP path.
 
+Root CMake defaults to the active integration, fetching pinned upstream Git revisions. `XRDP_RKMPP_FETCH_ONLY` is source/patch checking only; it never counts as native build or hardware validation. The generic prototype requires `XRDP_RKMPP_BUILD_LEGACY_PROTOTYPE=ON`.
+
 1. Before changes, inspect Git status, branch, commit and remotes. Preserve existing work. Do not merge branches or rewrite published history implicitly.
 2. Keep runtime changes focused. Preserve software fallback, explicit diagnostics, source-buffer ownership, cache synchronization and real client flow control.
 3. Pin upstream versions and checksums. Keep upstream attribution and dependency license information.

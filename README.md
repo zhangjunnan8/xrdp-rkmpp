@@ -24,7 +24,7 @@ RKVENC 是专用视频编码单元。Mali GPU 利用率不能用于判断它是�
 - 输入所有权转移后允许抓屏与编码重叠，保留真实客户端 ACK 和上游在途帧数限制。
 - 动态分辨率、闲置后刷新、IDR 携带 SPS/PPS，以及硬件失败后的明确 x264 回退与画面恢复。
 - 严格模式用于验收，MPP 失败时不能静默回退。
-- 固定并校验 **XRDP 0.10.6.1 / xorgxrdp 0.10.5** 官方归档，原生构建并使用独立版本目录。
+- 固定 **XRDP 0.10.6.1 / xorgxrdp 0.10.5** 的 Git 提交和子模块版本，原生构建并使用独立版本目录。
 
 ## 性能实测
 
@@ -42,11 +42,20 @@ RKVENC 是专用视频编码单元。Mali GPU 利用率不能用于判断它是�
 
 从 [全新开发板安装教程](docs/new-board-install.md) 开始；另有 [英文入门说明](docs/getting-started.md)。教程覆盖依赖、原生编译、独立 3391 服务、设备权限与真实 RDP 验收。
 
-公开源码位于 [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp) 的 **`main`** 分支。教程统一使用 `xrdp-rkmpp` 服务与目录名，并显式传入构建参数；不需要原开发环境的分支、旧 XRDP 安装或实验配置。
+公开源码位于 [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp) 的 **`main`** 分支。教程统一使用 `xrdp-rkmpp` 服务与目录名，不需要原开发环境的分支、旧 XRDP 安装或实验配置。
 
 需要可用的 RK3576 BSP/MPP、匹配的 Xorg 开发头文件、x264/OpenH264 开发包及 X11 桌面。普通 Ubuntu ARM 镜像不一定具备这些条件。
 
-原生构建入口是 `rk3576/build.sh` 和 `rk3576/build-xorg.sh`，只生成 stage，不安装或重启系统服务。根目录 CMake 构建的是**历史通用原型**，不是 RK3576 接入。在板端干净 Git 检出中构建，归档地址、校验值和命令见教程。
+安装教程中的开发依赖准备好后，在板端执行：
+
+```bash
+git clone --branch main --single-branch https://github.com/zhangjunnan8/xrdp-rkmpp.git
+cd xrdp-rkmpp
+cmake -S . -B build
+cmake --build build --parallel 4
+```
+
+根目录 CMake 自动浅拉取固定 Git 提交的 XRDP、其子模块和 xorgxrdp，应用补丁并生成两部分产物；等价于在 `build/` 中执行 `cmake ..` 后编译。二进制快捷入口为 `build/bin/xrdp`、`build/bin/xrdp-sesman`，完整安装树位于 `build/xrdp/stage/` 与 `build/xorgxrdp/stage/`。它不安装系统文件或重启服务，后续部署按安装教程执行。详见 [CMake 构建指南](docs/building.md)。新入口已完成本地源码/流程检查，RK3576 原生构建尚待设备上线后验证。
 
 部署后在该实例 `gfx.toml` 中选择 `h264_encoder = "MPP"`，并设置 XRDP 服务环境变量：
 
@@ -78,7 +87,8 @@ RKVENC 是专用视频编码单元。Mali GPU 利用率不能用于判断它是�
 | `docs/performance.md` | 性能、测试方法及解读 |
 | `docs/validation/` | 带日期的验收记录与原始构建标识 |
 | `docs/unattended-benchmark.md` | 合成负载与独立 LAN 客户端配置 |
-| `src/`、`include/`、`backends/`、根 CMake | 历史通用 C ABI 原型；不参与当前硬编码路径 |
+| `CMakeLists.txt`、`cmake/` | 默认构建当前 XRDP 集成并管理固定上游依赖 |
+| `src/`、`include/`、`backends/` | 历史通用 C ABI 原型；仅显式开启旧原型选项时构建 |
 
 公开快照不携带私有开发历史。验收文档中的构建 SHA 标识原实测产物，不一定能在公开仓库中检出。对应关系见 [发布来源与隐私检查](docs/public-release.md)。
 

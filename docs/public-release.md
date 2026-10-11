@@ -50,3 +50,5 @@ Preserve separate reports for native shell syntax, pinned upstream patch applica
 Detailed results: [2026-10-11 release checks](validation/2026-10-11-public-release.md).
 
 The later correction to the public GitHub installation recipe has a separate [installation-check record](validation/2026-10-11-public-install.md). It introduces explicit `xrdp-rkmpp` / `xrdp-rkmpp-xorg` build namespaces; historical benchmark paths remain unchanged in their original reports.
+
+Root CMake now defaults to the active integration and fetches pinned upstream Git commits. The [CMake check record](validation/2026-10-11-cmake-build.md) distinguishes local source/flow checks from pending native board compilation. The archive scripts remain available for historical workflows.

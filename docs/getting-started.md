@@ -12,55 +12,26 @@ Build dependencies include C/C++ build tools, Git, autoconf/automake/libtool/pkg
 
 Ubuntu 22.04 is untested. Ubuntu 20.04 requires additional BSP/MPP work: the tested vendor MPP binary requires glibc >= 2.34, while stock 20.04 has 2.31. Do not upgrade glibc manually to force that package to install.
 
-## Fetch reviewed source and upstream archives
+## Clone and build
 
-Run the commands in one Bash session as a normal user on the board. Clone public `main` into a new directory, record its actual SHA and detach at that commit for a reproducible build. The maintainer's `release/rk3576-open-source` branch is not the GitHub installation branch. No GitHub account or SSH key is needed:
+After the dependency checks above (including CMake 3.16+ and Python 3.8+), run on the RK3576 board as a normal user:
 
 ```bash
 set -euo pipefail
-mkdir -p "$HOME/src" "$HOME/downloads/xrdp-rkmpp"
-REPOSITORY_URL=https://github.com/zhangjunnan8/xrdp-rkmpp.git
-RELEASE_BRANCH=main
-git clone --single-branch --no-tags --branch "$RELEASE_BRANCH" \
-  "$REPOSITORY_URL" "$HOME/src/xrdp-rkmpp"
+mkdir -p "$HOME/src"
+git clone --single-branch --no-tags --branch main \
+  https://github.com/zhangjunnan8/xrdp-rkmpp.git "$HOME/src/xrdp-rkmpp"
 cd "$HOME/src/xrdp-rkmpp"
-REPO=$PWD
-git status --short
-test -z "$(git status --porcelain)"
-SHA=$(git rev-parse HEAD)
-git switch --detach "$SHA"
-printf 'Build source: %s\n' "$SHA"
-DOWNLOADS="$HOME/downloads/xrdp-rkmpp"
-curl -fL --retry 3 -o "$DOWNLOADS/xrdp-0.10.6.1.tar.gz" \
-  https://github.com/neutrinolabs/xrdp/releases/download/v0.10.6.1/xrdp-0.10.6.1.tar.gz
-curl -fL --retry 3 -o "$DOWNLOADS/xorgxrdp-0.10.5.tar.gz" \
-  https://github.com/neutrinolabs/xorgxrdp/releases/download/v0.10.5/xorgxrdp-0.10.5.tar.gz
-(cd "$DOWNLOADS" && sha256sum -c <<'SUMS'
-2f7beb5a3b2529c8d72dc0df9b8cdca31ab0e0c14d1e3421210f5e6ec0ab3b75  xrdp-0.10.6.1.tar.gz
-a5d03435f0ef48bf3d5010e63d9264f2334e7063cba3ecd8d4c0a15616a4f712  xorgxrdp-0.10.5.tar.gz
-SUMS
-)
+cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build --parallel 4
+source build/install-env.sh
 ```
 
-These must be release attachments, not GitHub's auto-generated source archives. If the board cannot reach GitHub, transfer the same archives from another computer and verify their hashes on the board.
+Alternatively, run `cmake ..` and `cmake --build .` inside a new `build` directory. Root CMake now builds the active XRDP integration. It shallow-fetches exact Git commits for XRDP 0.10.6.1, its pinned submodules and xorgxrdp 0.10.5, checks and patches them, builds both components, and passes the staged XRDP headers to xorgxrdp automatically. No manual tarball download or `XRDP_CFLAGS` setup is required.
 
-## Native staged build
+Binaries are exposed as `build/bin/xrdp` and `build/bin/xrdp-sesman`; complete staged install trees are in `build/xrdp/stage/` and `build/xorgxrdp/stage/`. The generated `install-env.sh` sets all variables needed by the installation recipe. Builds run CPU conversion/parser checks, but do not run MPP encoding, install system files or start services. They use the board's existing BSP/MPP rather than rebuilding vendor drivers.
 
-```bash
-XRDP_BUILD="$HOME/build/xrdp-rkmpp/$SHA"
-XORG_BUILD="$HOME/build/xrdp-rkmpp-xorg/$SHA"
-sh "$REPO/rk3576/build.sh" \
-  "$DOWNLOADS/xrdp-0.10.6.1.tar.gz" "$XRDP_BUILD" xrdp-rkmpp
-PREFIX=$(cat "$XRDP_BUILD/install-prefix")
-XRDP_CFLAGS="-I$XRDP_BUILD/stage$PREFIX/include" \
-  sh "$REPO/rk3576/build-xorg.sh" \
-  "$DOWNLOADS/xorgxrdp-0.10.5.tar.gz" "$XORG_BUILD" xrdp-rkmpp-xorg
-XPREFIX=$(cat "$XORG_BUILD/install-prefix")
-cat "$XRDP_BUILD/pipeline-test.log"
-cat "$XORG_BUILD/conversion-test.log" "$XORG_BUILD/conversion-ubsan.log"
-```
-
-The output directories must not exist. `XRDP_CFLAGS` points at this build's staged headers, so no old XRDP installation is required. Pass the third argument to **both** scripts: it selects `/opt/xrdp-rkmpp/<SHA>` and `/opt/xrdp-rkmpp-xorg/<SHA>`, matching the installation recipe. Omitted arguments retain historical defaults for existing lab workflows. Scripts only stage files; they do not install into `/opt` or change services.
+See [the CMake guide](building.md) for pinned revisions, output paths, build logs, mirrors and the workstation `XRDP_RKMPP_FETCH_ONLY` mode. Full compilation requires native Linux ARM64 with matching dependencies. The new orchestration has local source/flow checks only; native RK3576 compilation is pending while the board is offline.
 
 ## Install and validate
 
@@ -76,4 +47,4 @@ Section 10 of the [complete recipe](new-board-install.md#10-获取后续公开�
 
 Legacy lab helpers retain their original service and directory assumptions and cannot be used directly to install, upgrade or profile this public namespace. Use the documented manual animation/log checks for first acceptance.
 
-The installation recipe has been syntax/configuration-checked, not independently replayed end-to-end on a second blank board. The public namespace changes have local checks only; see [public installation checks](validation/2026-10-11-public-install.md). English instructions do not expand that validation claim.
+The installation recipe has been syntax/configuration-checked, not independently replayed end-to-end on a second blank board. The public namespace and new CMake orchestration have local checks only; see [public installation checks](validation/2026-10-11-public-install.md) and [CMake checks](validation/2026-10-11-cmake-build.md). English instructions do not expand that validation claim.

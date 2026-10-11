@@ -1,6 +1,6 @@
 # Development workflow / 开发流程
 
-The active implementation is the RK3576 direct MPP path. Root CMake and the generic ABI prototype are historical; see [repository overview](../README.en.md).
+The active implementation is the RK3576 direct MPP path, built by root CMake. The generic ABI prototype is historical and requires explicit opt-in; see [repository overview](../README.en.md).
 
 ## Source and board responsibilities
 
@@ -10,7 +10,7 @@ Keep one authoritative source checkout for edits, review and commits. The board 
 2. Make focused changes and run applicable static checks. Record the exact source SHA.
 3. Transfer that commit using your Git server, SSH or a Git bundle. Never copy private keys to the board.
 4. Check the board's status, then check out the exact SHA. A directory name or “latest” is not proof of matching source.
-5. Build using `rk3576/build.sh` and `rk3576/build-xorg.sh` into new directories outside the repository. Stage files before deployment.
+5. Use the root [CMake build](building.md) to fetch pinned upstream sources and stage both components in an ignored build directory. Inspect `build-info.json` and use a clean source checkout for deployment. Legacy archive scripts remain available for existing workflows.
 6. Run affected standalone tests first. Hardware and RDP changes require native validation on an isolated instance with no unrelated desktop sessions.
 7. Record source SHA, dirty/clean state, compiler, BSP/MPP/Xorg versions, client, settings, commands, results and limitations. Save sanitized summaries under `docs/validation/`.
 

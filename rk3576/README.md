@@ -4,17 +4,16 @@ See [English overview](../README.en.md) / [中文概览](../README.md). This dir
 
 ## Build and first installation
 
-Use the [fresh-board guide](../docs/new-board-install.md) or [English build overview](../docs/getting-started.md). Native entry points:
+Use the [fresh-board guide](../docs/new-board-install.md) or [English build overview](../docs/getting-started.md). The default root CMake entry point fetches pinned upstream Git revisions and builds both components:
 
 ```sh
-sh rk3576/build.sh /path/to/xrdp-0.10.6.1.tar.gz /absolute/new-xrdp-build xrdp-rkmpp
-# Set XRDP_CFLAGS to the matching staged include directory as shown in the guide.
-sh rk3576/build-xorg.sh /path/to/xorgxrdp-0.10.5.tar.gz /absolute/new-xorg-build xrdp-rkmpp-xorg
+cmake -S . -B build
+cmake --build build --parallel 4
 ```
 
-Pinned upstream archives are SHA-256 checked; unexpected source layouts stop the patch scripts. Builds stage versioned prefixes and do not change running services. Xorg modules are staged under the versioned module directory, not the system module directory.
+Unexpected upstream commits or source layouts stop the build. Builds stage versioned prefixes and do not change running services. Xorg modules are staged under the versioned module directory, not the system module directory. See [CMake details](../docs/building.md); native validation of this new build orchestration is pending.
 
-Public installations clone `main` from [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp). The explicit third arguments select the public `xrdp-rkmpp` and `xrdp-rkmpp-xorg` paths. Historical defaults remain available for existing lab workflows; do not omit these arguments when following the public installation guide.
+Public installations clone `main` from [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp). CMake selects the public `xrdp-rkmpp` / `xrdp-rkmpp-xorg` paths and supplies staged headers automatically. Legacy `build.sh` / `build-xorg.sh` archive workflows retain their checksums and existing namespace arguments for compatibility.
 
 ## Encoder behavior
 

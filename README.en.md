@@ -24,7 +24,7 @@ RKVENC is the dedicated video encoder. Mali GPU utilization does not indicate it
 - Capture overlaps encoding after source-buffer ownership transfers, retaining real client ACKs and the upstream in-flight frame limit.
 - Dynamic resolution, idle refresh, SPS/PPS at IDR frames, and explicit x264 recovery after hardware failure.
 - Strict hardware validation mode; no silent fallback on MPP failure.
-- Pinned, hash-checked **XRDP 0.10.6.1 / xorgxrdp 0.10.5**, native builds and separate versioned installation prefixes.
+- Pinned Git revisions and submodules for **XRDP 0.10.6.1 / xorgxrdp 0.10.5**, native builds and separate versioned installation prefixes.
 
 ## Measured performance
 
@@ -42,11 +42,20 @@ These are **server encoded-frame rates**, not monitor presentation FPS or input-
 
 Start with the [English getting-started guide](docs/getting-started.md) or the [complete fresh-board installation guide / 新板安装教程](docs/new-board-install.md) (Chinese). They cover native builds, a separate service on TCP 3391, device permissions and actual RDP validation.
 
-Public source is on **`main`** at [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp). The guides consistently use the `xrdp-rkmpp` service/directory namespace and explicit build arguments. No original development branch, old XRDP installation or lab configuration is required.
+Public source is on **`main`** at [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp). The guides consistently use the `xrdp-rkmpp` service/directory namespace. No original development branch, old XRDP installation or lab configuration is required.
 
 Prerequisites: a working RK3576 BSP/MPP stack, matching Xorg development headers, x264/OpenH264 development packages and an X11 desktop. An ordinary ARM Ubuntu image alone is insufficient.
 
-The native entry points are `rk3576/build.sh` and `rk3576/build-xorg.sh`. They stage files without installing or restarting services. Root CMake builds the **historical generic prototype**, not this XRDP integration. Build on the target board from a clean Git checkout; see the guides for pinned archive URLs, checksums and commands.
+After preparing the documented development dependencies on the board:
+
+```bash
+git clone --branch main --single-branch https://github.com/zhangjunnan8/xrdp-rkmpp.git
+cd xrdp-rkmpp
+cmake -S . -B build
+cmake --build build --parallel 4
+```
+
+Root CMake shallow-fetches pinned Git commits for XRDP, its submodules and xorgxrdp, applies patches and builds both. Running `cmake ..` inside `build/` is equivalent. Executable shortcuts are `build/bin/xrdp` and `build/bin/xrdp-sesman`; complete staged trees are in `build/xrdp/stage/` and `build/xorgxrdp/stage/`. No system files or services are changed. Continue with the installation recipe; see the [CMake guide](docs/building.md). The new entry point has local source/flow checks; native RK3576 compilation is pending while the board is offline.
 
 After installation, select `h264_encoder = "MPP"` in the instance's `gfx.toml` and set these XRDP service environment variables:
 
@@ -78,7 +87,8 @@ See [Known limitations / 已知限制](docs/known-limitations.md) for the comple
 | `docs/performance.md` | Benchmarks, methodology and interpretation |
 | `docs/validation/` | Dated evidence and historical build identifiers |
 | `docs/unattended-benchmark.md` | Isolated workload and LAN test setup |
-| `src/`, `include/`, `backends/`, root CMake | Historical generic C ABI prototype; unused by this integration |
+| `CMakeLists.txt`, `cmake/` | Default XRDP integration build and pinned upstream dependencies |
+| `src/`, `include/`, `backends/` | Historical generic C ABI prototype; built only with explicit legacy opt-in |
 
 The public snapshot omits private development history. Build identifiers in dated reports describe the original tested artifacts; they need not resolve in the public snapshot. See [release provenance and privacy review](docs/public-release.md).
 

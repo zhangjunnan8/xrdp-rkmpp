@@ -23,6 +23,8 @@
 
 ## Reliability and deployment / 稳定性与部署
 
+- Root CMake's new Git-fetch/build orchestration has local source/flow checks only; native RK3576 compilation and installation have not yet been rerun. `XRDP_RKMPP_FETCH_ONLY` produces no binaries and is not a hardware test. See [CMake checks](validation/2026-10-11-cmake-build.md).
+
 - MPP uses 250 ms input/output waits. User-space timeouts cannot guarantee recovery from a hung kernel driver. 内核驱动挂死不能靠用户态超时完全隔离。
 - Software recovery is tested for covered failure cases and must rebuild a complete frame/IDR. Strict mode forbids fallback; it does not force clients to negotiate H.264.
 - Validation includes independent decode, lifecycle checks, source-reuse poisoning, UBSan, protected memory boundaries and a five-minute resize run. It is not multi-day, multi-user production qualification.
