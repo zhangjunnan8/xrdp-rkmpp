@@ -1,4 +1,4 @@
-# XRDP CodecBridge — RK3576 MPP
+# XRDP RKMPP — Rockchip 硬件编码
 
 [简体中文](README.md) | [English](README.en.md)
 
@@ -41,6 +41,8 @@ RKVENC 是专用视频编码单元。Mali GPU 利用率不能用于判断它是�
 ## 构建与部署
 
 从 [全新开发板安装教程](docs/new-board-install.md) 开始；另有 [英文入门说明](docs/getting-started.md)。教程覆盖依赖、原生编译、独立 3391 服务、设备权限与真实 RDP 验收。
+
+公开源码位于 [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp) 的 **`main`** 分支。教程统一使用 `xrdp-rkmpp` 服务与目录名，并显式传入构建参数；不需要原开发环境的分支、旧 XRDP 安装或实验配置。
 
 需要可用的 RK3576 BSP/MPP、匹配的 Xorg 开发头文件、x264/OpenH264 开发包及 X11 桌面。普通 Ubuntu ARM 镜像不一定具备这些条件。
 

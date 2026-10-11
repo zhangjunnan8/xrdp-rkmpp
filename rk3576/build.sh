@@ -5,7 +5,7 @@ repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 archive=${1:?XRDP 0.10.6.1 release tar.gz required}
 out=${2:?new absolute build directory required}
 variant=${3:-xrdp-rk3576}
-case "$variant" in xrdp-rk3576|xrdp-rk3576-lab) ;; *) echo 'Unknown deployment namespace' >&2; exit 1;; esac
+case "$variant" in xrdp-rkmpp|xrdp-rk3576|xrdp-rk3576-lab) ;; *) echo 'Unknown deployment namespace' >&2; exit 1;; esac
 case "$out" in /*) ;; *) echo 'Build directory must be absolute' >&2; exit 1;; esac
 test ! -e "$out"
 test "$(sha256sum "$archive" | cut -d ' ' -f 1)" = 2f7beb5a3b2529c8d72dc0df9b8cdca31ab0e0c14d1e3421210f5e6ec0ab3b75

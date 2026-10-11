@@ -4,12 +4,14 @@ set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 archive=${1:?xorgxrdp 0.10.5 archive required}
 out=${2:?new absolute output directory required}
+variant=${3:-xrdp-rk3576-xorg}
+case "$variant" in xrdp-rkmpp-xorg|xrdp-rk3576-xorg) ;; *) echo 'Unknown Xorg deployment namespace' >&2; exit 1;; esac
 case "$out" in /*) ;; *) exit 2;; esac
 test ! -e "$out"
 test -z "$(git -C "$repo" status --porcelain)"
 test "$(sha256sum "$archive" | cut -d ' ' -f 1)" = a5d03435f0ef48bf3d5010e63d9264f2334e7063cba3ecd8d4c0a15616a4f712
 sha=$(git -C "$repo" rev-parse HEAD)
-prefix=/opt/xrdp-rk3576-xorg/$sha
+prefix=/opt/$variant/$sha
 mkdir -p "$out"
 cp -R "$repo/rk3576" "$out/integration"
 tar -xzf "$archive" -C "$out"

@@ -18,4 +18,4 @@ Keep one authoritative source checkout for edits, review and commits. The board 
 
 ## Public releases
 
-Use the sanitized release branch for public migration; see [release procedure](public-release.md). Historical build IDs in validation reports identify older private development artifacts. Do not manufacture new benchmark claims when only documentation or lab configuration changes.
+Contributors clone public `main` from [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp). Use the public build arguments and installation paths in [getting started](getting-started.md). Only maintainers publishing from the original source repository use the sanitized `release/rk3576-open-source` branch; see [release procedure](public-release.md). Historical build IDs in validation reports identify older private development artifacts. Do not manufacture new benchmark claims when only documentation or lab configuration changes.

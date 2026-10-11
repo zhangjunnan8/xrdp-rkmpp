@@ -1,4 +1,4 @@
-# XRDP CodecBridge — RK3576 MPP
+# XRDP RKMPP — Rockchip Hardware Encoding
 
 [简体中文](README.md) | [English](README.en.md)
 
@@ -41,6 +41,8 @@ These are **server encoded-frame rates**, not monitor presentation FPS or input-
 ## Build and install
 
 Start with the [English getting-started guide](docs/getting-started.md) or the [complete fresh-board installation guide / 新板安装教程](docs/new-board-install.md) (Chinese). They cover native builds, a separate service on TCP 3391, device permissions and actual RDP validation.
+
+Public source is on **`main`** at [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp). The guides consistently use the `xrdp-rkmpp` service/directory namespace and explicit build arguments. No original development branch, old XRDP installation or lab configuration is required.
 
 Prerequisites: a working RK3576 BSP/MPP stack, matching Xorg development headers, x264/OpenH264 development packages and an X11 desktop. An ordinary ARM Ubuntu image alone is insufficient.
 

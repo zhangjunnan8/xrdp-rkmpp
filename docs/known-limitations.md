@@ -29,7 +29,8 @@
 - ASan could not start on the tested board's 39-bit virtual-address kernel. Do not label the RK3576 runtime ASan-tested; historical generic-prototype tests on another environment are separate.
 - Native builds depend on the exact BSP/MPP interfaces and matching Xorg ABI. The vendor MPP package tested requires glibc >= 2.34 and cannot simply be copied to stock Ubuntu 20.04 (glibc 2.31).
 - Legacy `install-lab-release.py` uses Python 3.9+ `Path.is_relative_to()` and assumes a particular lab layout. Use the fresh-board guide for first installation. 更换主机参数并不使旧升级脚本成为通用安装器。
-- The fresh-board recipe has static/configuration validation, not an independent clean-board end-to-end installation. No Ubuntu 22.04/20.04 hardware run is claimed.
+- The fresh-board recipe has static/configuration validation, not an independent clean-board end-to-end installation. The public `xrdp-rkmpp` namespace has local checks only; there is no validated one-command updater. No Ubuntu 22.04/20.04 hardware run is claimed. See [public installation checks](validation/2026-10-11-public-install.md).
+- Legacy benchmark/deployment helpers still assume historical lab services and paths. They do not directly support the public `xrdp-rkmpp` installation; use the guide's manual animation/log checks for first acceptance. 仅替换地址或沿用同一个端口不足以适配旧脚本。
 - Updating/restarting an XRDP instance interrupts its own desktop sessions, even if its name contains `lab`. Use a separate instance or a maintenance window.
 - Audio redirection modules, clipboard/drive-redirection hardening, deployment automation and system-driver upgrades are outside this release's validation scope.
 

@@ -7,12 +7,14 @@ See [English overview](../README.en.md) / [中文概览](../README.md). This dir
 Use the [fresh-board guide](../docs/new-board-install.md) or [English build overview](../docs/getting-started.md). Native entry points:
 
 ```sh
-sh rk3576/build.sh /path/to/xrdp-0.10.6.1.tar.gz /absolute/new-xrdp-build xrdp-rk3576-lab
+sh rk3576/build.sh /path/to/xrdp-0.10.6.1.tar.gz /absolute/new-xrdp-build xrdp-rkmpp
 # Set XRDP_CFLAGS to the matching staged include directory as shown in the guide.
-sh rk3576/build-xorg.sh /path/to/xorgxrdp-0.10.5.tar.gz /absolute/new-xorg-build
+sh rk3576/build-xorg.sh /path/to/xorgxrdp-0.10.5.tar.gz /absolute/new-xorg-build xrdp-rkmpp-xorg
 ```
 
 Pinned upstream archives are SHA-256 checked; unexpected source layouts stop the patch scripts. Builds stage versioned prefixes and do not change running services. Xorg modules are staged under the versioned module directory, not the system module directory.
+
+Public installations clone `main` from [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp). The explicit third arguments select the public `xrdp-rkmpp` and `xrdp-rkmpp-xorg` paths. Historical defaults remain available for existing lab workflows; do not omit these arguments when following the public installation guide.
 
 ## Encoder behavior
 
@@ -41,7 +43,7 @@ Pinned upstream archives are SHA-256 checked; unexpected source layouts stop the
 
 `lab_config.py` requires the expected hostname and non-root desktop account explicitly. Known-host SSH verification remains enabled. Read [the lab setup](../docs/unattended-benchmark.md) before using helpers; specifying a different host does not remove their fixed-port/display/layout assumptions. Do not bypass guards with `python -O`.
 
-旧安装脚本依赖既有 pilot 配置、模块路径、PAM 和测试显示号；新板使用安装教程。3391 若已用于办公，同样不能随意重启或压测。
+旧实验工具依赖既有实验服务名、配置、模块路径、PAM 和测试显示号；不能直接用于公开教程的 `xrdp-rkmpp` 安装或压测。新板使用安装教程中的动画和日志验收。3391 若已用于办公，同样不能随意重启或压测。
 
 Performance and validation: [matched optimization data](../docs/performance.md), [initial integration](../docs/validation/2026-10-10-rk3576-direct.md), [optimization acceptance](../docs/validation/2026-10-10-rk3576-optimization.md). Generated captures and raw logs stay outside Git.
 

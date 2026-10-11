@@ -1,26 +1,27 @@
 # Public release provenance and privacy / 公开发布说明
 
-## Publication branch
+## Public installation / 公开安装
 
-**Use `release/rk3576-open-source` for GitHub migration.** It is a new root commit containing the reviewed source tree, without the private development history. The existing development branch remains available on the original Git server; no existing history is force-rewritten.
+Install from **[zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp), branch `main`**. Follow [the Chinese installation recipe](new-board-install.md) or [the English overview](getting-started.md). The migration instructions below are for maintainers; users do not need the private development repository or its release branch.
+
+公开安装使用 GitHub 的 `main`；下面的发布分支名仅用于维护者从原仓库发布，不是用户克隆或编译时要填写的分支。
+
+## Maintainer publication branch / 维护者发布
+
+**Publish only `release/rk3576-open-source` from the maintainer's source repository.** Its initial commit is a new root containing the reviewed source tree; later public commits descend from that root without private development ancestry. The existing development branch remains available on the original Git server; no existing history is force-rewritten.
 
 **迁移时仅使用 `release/rk3576-open-source`。** 原开发分支的旧历史仍包含个人提交邮箱、现场地址、用户名路径和主机指纹。修改当前文件不会删除这些历史；不要直接使用整库导入、`--mirror`、`--all` 或把旧 `main` 一起推到公开仓库。
 
-In a new empty directory, substitute your repository URLs and run only the selected-branch migration:
+In the maintainer's source checkout, review the public branch and push only that ref to GitHub `main`:
 
 ```sh
-git clone --single-branch --no-tags --branch release/rk3576-open-source \
-  SOURCE_REPOSITORY_URL xrdp-codecbridge-public
-cd xrdp-codecbridge-public
-# Expect one initial public commit at the first publication.
-git rev-list --count HEAD
-python tools/check-public-tree.py --ref HEAD
-git remote remove origin
-git remote add origin GITHUB_REPOSITORY_URL
-git push -u origin HEAD:main
+git log --oneline release/rk3576-open-source
+python3 tools/check-public-tree.py --ref release/rk3576-open-source
+git -c push.followTags=false push https://github.com/zhangjunnan8/xrdp-rkmpp.git \
+  refs/heads/release/rk3576-open-source:refs/heads/main
 ```
 
-This makes the reviewed public snapshot the new GitHub `main`. Do not push other refs. The non-personal author identity on the initial public snapshot is a project attribution, not a claimed verified GitHub identity.
+This publishes reviewed public commits to GitHub `main` without changing the original remote configuration or pushing tags. Do not push other refs or merge private development ancestry into this branch. The non-personal author identity on the initial public snapshot is a project attribution, not a claimed verified GitHub identity.
 
 ## What was reviewed
 
@@ -47,3 +48,5 @@ Run `python tools/check-public-tree.py` before committing and with `--ref` again
 Preserve separate reports for native shell syntax, pinned upstream patch application, generated-source attribution and lab guard checks. Do not rerun a desktop workload on an occupied session just to produce a release checklist.
 
 Detailed results: [2026-10-11 release checks](validation/2026-10-11-public-release.md).
+
+The later correction to the public GitHub installation recipe has a separate [installation-check record](validation/2026-10-11-public-install.md). It introduces explicit `xrdp-rkmpp` / `xrdp-rkmpp-xorg` build namespaces; historical benchmark paths remain unchanged in their original reports.

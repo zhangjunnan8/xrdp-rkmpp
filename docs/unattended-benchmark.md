@@ -1,5 +1,9 @@
 # Isolated desktop benchmark / 隔离桌面测试
 
+> These are historical lab instructions, not a companion installer for public `xrdp-rkmpp` services. The helpers still assume the `xrdp-rk3576-lab` service/configuration layout (and some older helpers use another lab instance). Replacing site addresses or using the same port does not adapt them to the public namespace. Public users should start with the animation and hardware-log checks in [the installation guide](new-board-install.md).
+
+> 本文保留原实验布局与数据复现方式；不能直接用于公开教程的 `xrdp-rkmpp` 实例。首次验收使用安装教程，不要仅替换 IP、服务名或路径就运行这些实验脚本。
+
 The synthetic application creates real X11 windows, movement, tables, small text and changing pixels. The default cycle spends 20 seconds each on movement, color changes and both. It exercises composition, capture, conversion, encoding, transport and decoding; it does not simulate disk I/O or measure physical input latency. Animation draw counts are not encoded FPS.
 
 ## Session isolation
