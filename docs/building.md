@@ -49,6 +49,8 @@ source build/install-env.sh
 
 默认构建不运行 MPP 编码、不连接桌面、不启动服务。`cmake --install` 不承担系统部署；当前提供暂存产物和首次安装步骤。部署使用干净 Git 检出；修改状态记录在 `build-info.json` 中。
 
+The CMake-built `test-direct` and `test-lifecycle` use the actual encoder objects and config parser, but redirect the parser's filename to staged `gfx.toml`. This test-only linker wrapper allows x264/fallback checks before installation without writing to `/etc`; `XRDP_TEST_GFX_CONFIG` can explicitly select another test fixture. Server binaries retain their normal configuration path. Run hardware tests separately on an idle board with the required device permissions.
+
 ## Dependencies / 固定依赖
 
 Pins are in [UpstreamVersions.cmake](../cmake/UpstreamVersions.cmake):

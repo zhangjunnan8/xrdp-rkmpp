@@ -125,6 +125,15 @@ def compile_helpers(args):
     cc = [args.cc] + shlex.split(args.cflags) + ['-UNDEBUG', '-Wall', '-Wextra', '-Werror']
     ld = shlex.split(args.ldflags)
     if args.kind == 'xrdp':
+        # x264's real encoder loads GFX_CONF from the installation prefix. For
+        # standalone tests only, redirect that parser call to our staged config.
+        # The shipped server objects and configuration lookup remain unchanged.
+        gfx_config = args.output / 'stage' / 'etc' / 'xrdp-rkmpp' / 'xrdp' / 'gfx.toml'
+        if not gfx_config.is_file():
+            raise RuntimeError('Missing staged test configuration: ' + str(gfx_config))
+        test_config = [str(integration / 'test-gfx-config.c'),
+                       '-DXRDP_TEST_GFX_CONFIG_DEFAULT=' + json.dumps(str(gfx_config), ensure_ascii=False),
+                       '-Wl,--wrap=tconfig_load_gfx']
         for mode in ('direct', 'lifecycle'):
             run(cc + ['-I.', '-Icommon', '-Ixrdp', '-Ilibxrdp', '-Ilibipm',
                       str(integration / ('test_' + mode + '.c')),
@@ -132,7 +141,7 @@ def compile_helpers(args):
                       'xrdp/xrdp_tconfig.o', 'common/.libs/libcommon.a',
                       'third_party/tomlc99/.libs/libtoml.a', '-lrockchip_mpp',
                       '-lx264', '-lssl', '-lcrypto', '-ldl', '-lpthread', '-lm']
-                + ld + ['-o', str(args.output / ('test-' + mode))], cwd=args.work)
+                + test_config + ld + ['-o', str(args.output / ('test-' + mode))], cwd=args.work)
         for name, source, libs in [('desktop-motion', 'desktop-motion.c', ['-lX11', '-lm']),
                                    ('test-desktop', 'test_desktop.c', ['-lX11'])]:
             run(cc + [str(integration / source)] + libs + ld
