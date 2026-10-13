@@ -23,14 +23,14 @@
 
 ## Reliability and deployment / 稳定性与部署
 
-- Root CMake has passed native RK3576 compilation, staged-artifact checks and standalone MPP encoding with independent decoding. This does not validate a fresh installation or an actual RDP session using those new artifacts. `XRDP_RKMPP_FETCH_ONLY` produces no binaries and is not a hardware test. See [native CMake checks](validation/2026-10-13-cmake-native.md).
+- Root CMake has passed native RK3576 compilation, staged-artifact checks and standalone MPP encoding with independent decoding. Subsequent [single-instance acceptance](validation/2026-10-13-single-instance.md) validates public-namespace deployment and real headless RDP on the original board, not a second fresh board. `XRDP_RKMPP_FETCH_ONLY` produces no binaries and is not a hardware test. See [native CMake checks](validation/2026-10-13-cmake-native.md).
 
 - MPP uses 250 ms input/output waits. User-space timeouts cannot guarantee recovery from a hung kernel driver. 内核驱动挂死不能靠用户态超时完全隔离。
 - Software recovery is tested for covered failure cases and must rebuild a complete frame/IDR. Strict mode forbids fallback; it does not force clients to negotiate H.264.
 - Validation includes independent decode, lifecycle checks, source-reuse poisoning, UBSan, protected memory boundaries and a five-minute resize run. It is not multi-day, multi-user production qualification.
 - ASan could not start on the tested board's 39-bit virtual-address kernel. Do not label the RK3576 runtime ASan-tested; historical generic-prototype tests on another environment are separate.
 - Native builds depend on the exact BSP/MPP interfaces and matching Xorg ABI. The vendor MPP package tested requires glibc >= 2.34 and cannot simply be copied to stock Ubuntu 20.04 (glibc 2.31).
-- The fresh-board recipe has static/configuration validation, not an independent clean-board end-to-end installation. Public `xrdp-rkmpp` service startup has not been retested with the CMake artifacts; there is no validated one-command updater. No Ubuntu 22.04/20.04 hardware run is claimed. See [public installation checks](validation/2026-10-11-public-install.md).
+- The fresh-board recipe has static/configuration validation, not an independent clean-board end-to-end installation. Public `xrdp-rkmpp` service startup and real RDP have now been tested with the CMake artifacts on the original board; there is no validated one-command updater. No Ubuntu 22.04/20.04 hardware run is claimed. See [public installation checks](validation/2026-10-11-public-install.md).
 - Historical multi-instance deployment/benchmark wrappers and the generic plugin prototype have been removed; use the current installation and workload guides.
 - Updating/restarting an XRDP instance interrupts its own desktop sessions, even if its name contains `lab`. Use a separate instance or a maintenance window.
 - Audio redirection modules, clipboard/drive-redirection hardening, deployment automation and system-driver upgrades are outside this release's validation scope.

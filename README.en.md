@@ -55,7 +55,7 @@ cmake -S . -B build
 cmake --build build --parallel 4
 ```
 
-Root CMake shallow-fetches pinned Git commits for XRDP, its submodules and xorgxrdp, applies patches and builds both. Running `cmake ..` inside `build/` is equivalent. Executable shortcuts are `build/bin/xrdp` and `build/bin/xrdp-sesman`; complete staged trees are in `build/xrdp/stage/` and `build/xorgxrdp/stage/`. No system files or services are changed. Continue with the installation recipe; see the [CMake guide](docs/building.md). **Native RK3576 compilation, artifact checks and standalone MPP encoding with independent decoding have passed**; see the [native validation record](docs/validation/2026-10-13-cmake-native.md). This round did not deploy or retest an actual RDP session.
+Root CMake shallow-fetches pinned Git commits for XRDP, its submodules and xorgxrdp, applies patches and builds both. Running `cmake ..` inside `build/` is equivalent. Executable shortcuts are `build/bin/xrdp` and `build/bin/xrdp-sesman`; complete staged trees are in `build/xrdp/stage/` and `build/xorgxrdp/stage/`. No system files or services are changed. Continue with the installation recipe; see the [CMake guide](docs/building.md). **Native RK3576 compilation, artifact checks and standalone MPP encoding with independent decoding have passed**; see the [native validation record](docs/validation/2026-10-13-cmake-native.md). A subsequent [single-instance acceptance](docs/validation/2026-10-13-single-instance.md) covers public-namespace deployment on 3389, real headless RDP, dynamic resolution and hardware encoding.
 
 After installation, select `h264_encoder = "MPP"` in the instance's `gfx.toml` and set these XRDP service environment variables:
 

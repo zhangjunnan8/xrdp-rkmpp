@@ -267,9 +267,16 @@ cat > "$c/startwm.sh" <<'WM'
 unset SESSION_MANAGER DBUS_SESSION_BUS_ADDRESS
 export XDG_CURRENT_DESKTOP=XFCE DESKTOP_SESSION=xfce
 export XDG_SESSION_DESKTOP=xfce XDG_SESSION_TYPE=x11
-export XDG_CONFIG_DIRS=/etc/xdg
+export XDG_CONFIG_DIRS=/etc/xrdp-rkmpp/xdg:/etc/xdg
 exec /usr/bin/dbus-run-session -- /usr/bin/startxfce4
 WM
+install -d -m 0755 /etc/xrdp-rkmpp/xdg/autostart
+cat > /etc/xrdp-rkmpp/xdg/autostart/nm-applet.desktop <<'AUTOSTART'
+[Desktop Entry]
+Type=Application
+Name=Network applet
+Hidden=true
+AUTOSTART
 chmod 0755 "$c/startwm.sh" "$c/reconnectwm.sh"
 openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
   -subj "/CN=$(hostname)" -keyout "$c/key.pem" -out "$c/cert.pem"
@@ -317,6 +324,8 @@ INSTALL
 ```
 
 安装块不是可反复执行的升级脚本；中途失败时保留输出、检查已写入文件，不要删除冲突目录强行重跑。它使用新生成的本机密钥，并在 `/etc/xrdp-rkmpp/xrdp/source-commit` 记录安装来源。上述目录名与 CMake 固定的公开安装路径配套，不要只修改 service 名或某一处路径。
+
+RDP 专用的 XDG 配置禁止 `nm-applet` 在远程会话自动启动，避免无头桌面反复弹出 Wi-Fi 扫描授权；不改变 NetworkManager 服务、实际网络或本地桌面的自启动配置。
 
 ## 7. 验证硬件权限、编码与启动
 
@@ -450,7 +459,7 @@ sudo systemctl disable --now xrdp-rkmpp xrdp-rkmpp-sesman
 
 原版教程在 2026-10-11 完成了 Bash/Python 示例检查、基于历史验收产物的配置生成、unit 校验和 stage 头文件配置验证。那些记录使用的是当时的实验安装名称，不能当作当前公开名称已经在新板部署成功的证明。
 
-手工安装参数的检查范围见 [公开安装参数校验](validation/2026-10-11-public-install.md)，CMake 原生编译和独立硬编码见 [板端验收记录](validation/2026-10-13-cmake-native.md)。未在第二块空白板完成全流程安装，本轮没有重启现有服务或重新连接 RDP，也没有 Ubuntu 22.04/20.04 的硬件运行记录。
+手工安装参数的检查范围见 [公开安装参数校验](validation/2026-10-11-public-install.md)，CMake 原生编译和独立硬编码见 [板端验收记录](validation/2026-10-13-cmake-native.md)。随后已在原开发板完成公开路径的单套 3389 部署、实际无头 RDP 登录与硬编码验收，见 [单套服务记录](validation/2026-10-13-single-instance.md)。这不等于第二块空白板的全流程安装；仍没有 Ubuntu 22.04/20.04 的硬件运行记录。
 
 - [XRDP 0.10.6.1 官方发行版](https://github.com/neutrinolabs/xrdp/releases/tag/v0.10.6.1)、[xorgxrdp 0.10.5 官方发行版](https://github.com/neutrinolabs/xorgxrdp/releases/tag/v0.10.5)。
 - [xorgxrdp 上游构建说明](https://github.com/neutrinolabs/xorgxrdp/tree/v0.10.5)：支持用 `XRDP_CFLAGS` 指定头文件而不预先安装 XRDP。
