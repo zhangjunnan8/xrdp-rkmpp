@@ -21,7 +21,7 @@ Upstream Autotools is orchestrated through [CMake ExternalProject](https://cmake
 
 | Path under `build/` | Contents |
 |---|---|
-| `bin/xrdp`, `bin/xrdp-sesman` | Symlinks to staged executables |
+| `bin/xrdp`, `bin/xrdp-sesman` | Launchers for staged executables, with their private library search path |
 | `bin/xrdp-rkmpp-motion-test` | X11 animation executable |
 | `xrdp/stage/`, `xorgxrdp/stage/` | Full isolated install trees, including libraries/configuration and Xorg modules |
 | `xrdp/install-prefix`, `xorgxrdp/install-prefix` | `/opt/xrdp-rkmpp/<SHA>` and `/opt/xrdp-rkmpp-xorg/<SHA>` |
@@ -32,7 +32,16 @@ Upstream Autotools is orchestrated through [CMake ExternalProject](https://cmake
 | `xorgxrdp/conversion-test.log`, `conversion-ubsan.log` | CPU-only converter/reference checks |
 | `_deps/*-ep/src/*-stamp/` | ExternalProject configure/build/install logs |
 
-Binaries link against the board's libraries; they are not portable apps and do not create an RDP service. Use [installation steps 6–9](new-board-install.md#6-首次安装独立-3391-服务), starting with:
+Check the new executables before installation, without starting a daemon:
+
+```bash
+build/bin/xrdp --version
+build/bin/xrdp-sesman --version
+```
+
+These launchers set `LD_LIBRARY_PATH` for the child process to find this build's staged XRDP libraries. Actual ELF executables remain under `xrdp/stage/opt/xrdp-rkmpp/<SHA>/sbin/`; deployment uses those files, not the launchers. Keep the build directory in place or regenerate the launchers after moving it.
+
+Binaries also link against the board's libraries; they are not portable apps and do not create an RDP service. Use [installation steps 6–9](new-board-install.md#6-首次安装独立-3391-服务), starting with:
 
 ```bash
 source build/install-env.sh
