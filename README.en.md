@@ -19,7 +19,7 @@ X11 desktop → xorgxrdp capture → BGRA-to-NV12 (AArch64 NEON)
 
 RKVENC is the dedicated video encoder. Mali GPU utilization does not indicate its activity. Desktop rendering and some memory transfers still use the CPU.
 
-- Direct XRDP H.264 callbacks; no CodecBridge plugin loader in this path.
+- One optimized direct XRDP H.264 integration; the generic plugin prototype and old instance scripts have been removed.
 - Persistent DMA input with damaged-region updates and explicit cache synchronization.
 - Capture overlaps encoding after source-buffer ownership transfers, retaining real client ACKs and the upstream in-flight frame limit.
 - Dynamic resolution, idle refresh, SPS/PPS at IDR frames, and explicit x264 recovery after hardware failure.
@@ -40,7 +40,7 @@ These are **server encoded-frame rates**, not monitor presentation FPS or input-
 
 ## Build and install
 
-Start with the [English getting-started guide](docs/getting-started.md) or the [complete fresh-board installation guide / 新板安装教程](docs/new-board-install.md) (Chinese). They cover native builds, a separate service on TCP 3391, device permissions and actual RDP validation.
+Start with the [English getting-started guide](docs/getting-started.md) or the [complete fresh-board installation guide / 新板安装教程](docs/new-board-install.md) (Chinese). They cover native builds, one headless desktop service on default TCP 3389, device permissions and actual RDP validation.
 
 Public source is on **`main`** at [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp). The guides consistently use the `xrdp-rkmpp` service/directory namespace. No original development branch, old XRDP installation or lab configuration is required.
 
@@ -75,7 +75,7 @@ Verify **`first hardware frame complete` for the current connection** and no run
 - No RGA conversion, end-to-end zero-copy or GPU desktop rendering acceleration.
 - Fixed QP; no WAN adaptive bitrate. 4K60 and universal 60 FPS are not demonstrated.
 - A five-minute resize run is not a multi-day reliability test. ASan could not start on the tested board's 39-bit VA kernel; UBSan and explicit memory checks were used.
-- Lab helpers require explicit site configuration and isolated sessions; they are not a general-purpose deployment manager.
+- Headless operation requires no HDMI/DP display or dummy plug; Xorg, xorgxrdp and Xfce are still required.
 
 See [Known limitations / 已知限制](docs/known-limitations.md) for the complete qualification boundary.
 
@@ -88,7 +88,7 @@ See [Known limitations / 已知限制](docs/known-limitations.md) for the comple
 | `docs/validation/` | Dated evidence and historical build identifiers |
 | `docs/unattended-benchmark.md` | Isolated workload and LAN test setup |
 | `CMakeLists.txt`, `cmake/` | Default XRDP integration build and pinned upstream dependencies |
-| `src/`, `include/`, `backends/` | Historical generic C ABI prototype; built only with explicit legacy opt-in |
+| `docs/architecture.md` | Single-instance service, session management and encoding path |
 
 The public snapshot omits private development history. Build identifiers in dated reports describe the original tested artifacts; they need not resolve in the public snapshot. See [release provenance and privacy review](docs/public-release.md).
 

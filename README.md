@@ -19,7 +19,7 @@ X11 桌面 → xorgxrdp 抓屏 → BGRA 转 NV12（AArch64 NEON）
 
 RKVENC 是专用视频编码单元。Mali GPU 利用率不能用于判断它是否工作；桌面绘制与部分内存传输仍会消耗 CPU。
 
-- 直接接入 XRDP 的 H.264 回调，当前链路不使用通用 CodecBridge 插件加载器。
+- 直接接入 XRDP 的 H.264 回调，仅保留这一套优化实现，已移除早期通用插件原型和旧实例脚本。
 - 持久化、带缓存同步的 DMA 输入，只更新发生变化的区域。
 - 输入所有权转移后允许抓屏与编码重叠，保留真实客户端 ACK 和上游在途帧数限制。
 - 动态分辨率、闲置后刷新、IDR 携带 SPS/PPS，以及硬件失败后的明确 x264 回退与画面恢复。
@@ -40,7 +40,7 @@ RKVENC 是专用视频编码单元。Mali GPU 利用率不能用于判断它是�
 
 ## 构建与部署
 
-从 [全新开发板安装教程](docs/new-board-install.md) 开始；另有 [英文入门说明](docs/getting-started.md)。教程覆盖依赖、原生编译、独立 3391 服务、设备权限与真实 RDP 验收。
+从 [全新开发板安装教程](docs/new-board-install.md) 开始；另有 [英文入门说明](docs/getting-started.md)。教程覆盖依赖、原生编译、默认 3389 的单套服务和无头桌面、设备权限与真实 RDP 验收。
 
 公开源码位于 [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp) 的 **`main`** 分支。教程统一使用 `xrdp-rkmpp` 服务与目录名，不需要原开发环境的分支、旧 XRDP 安装或实验配置。
 
@@ -75,7 +75,7 @@ cmake --build build --parallel 4
 - 没有 RGA 转换、端到端零拷贝或 GPU 桌面渲染加速。
 - 固定 QP，没有广域网自适应码率；没有证明 4K60 或所有负载 60 FPS。
 - 五分钟分辨率轮换不等于多日稳定性验证。测试板的 39 位虚拟地址内核无法启动 ASan，实际使用 UBSan 和显式内存检查。
-- 实验工具需要显式填写现场配置，并使用隔离会话，不是通用部署管理器。
+- 默认无头运行，不需要 HDMI/DP 显示器或虚拟显示插头；仍需安装 Xorg、xorgxrdp 和 Xfce。
 
 完整支持矩阵见 [已知限制](docs/known-limitations.md)。
 
@@ -88,7 +88,7 @@ cmake --build build --parallel 4
 | `docs/validation/` | 带日期的验收记录与原始构建标识 |
 | `docs/unattended-benchmark.md` | 合成负载与独立 LAN 客户端配置 |
 | `CMakeLists.txt`、`cmake/` | 默认构建当前 XRDP 集成并管理固定上游依赖 |
-| `src/`、`include/`、`backends/` | 历史通用 C ABI 原型；仅显式开启旧原型选项时构建 |
+| `docs/architecture.md` | 单套服务、会话管理和编码路径说明 |
 
 公开快照不携带私有开发历史。验收文档中的构建 SHA 标识原实测产物，不一定能在公开仓库中检出。对应关系见 [发布来源与隐私检查](docs/public-release.md)。
 

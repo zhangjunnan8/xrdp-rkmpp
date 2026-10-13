@@ -1,6 +1,6 @@
 # 全新 RK3576 开发板部署教程
 
-适用于公开仓库 **[zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp) 的 `main` 分支**：在 KICKPI K7 / RK3576 上原生编译 XRDP 0.10.6.1 和 xorgxrdp 0.10.5，启用 MPP 硬编码、NEON 转换和流水线优化。本文以 3391 端口、Xfce 桌面、单屏办公为例，无需原开发环境或任何私有仓库。
+适用于公开仓库 **[zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp) 的 `main` 分支**：在 KICKPI K7 / RK3576 上原生编译 XRDP 0.10.6.1 和 xorgxrdp 0.10.5，启用 MPP 硬编码、NEON 转换和流水线优化。本文默认一套 3389 端口、Xfce 桌面的无头服务，面向单屏办公，无需原开发环境或任何私有仓库。
 
 本文使用以下公开安装约定，后续命令中的名称必须保持一致：
 
@@ -11,10 +11,10 @@
 | 安装目录 | `/opt/xrdp-rkmpp/<SHA>`、`/opt/xrdp-rkmpp-xorg/<SHA>` |
 | 配置 / 日志 / 运行目录 | `/etc/xrdp-rkmpp/xrdp`、`/var/log/xrdp-rkmpp`、`/run/xrdp-rkmpp` |
 | systemd 服务 | `xrdp-rkmpp`、`xrdp-rkmpp-sesman` |
-| RDP 端口 / Xorg 起始显示号 | `3391` / `:50`，用于与其他实例隔离；安装前检查是否空闲 |
+| RDP 端口 / Xorg 起始显示号 | `3389` / `:50`；默认只运行一套实例，安装前检查是否空闲 |
 | 桌面账号 / 地址 | 使用新板自己的普通用户、密码和实际地址 |
 
-不要把发布维护者的 `release/rk3576-open-source` 分支名用于从 GitHub 安装；公开仓库的安装入口是 `main`。旧实验辅助脚本不是本教程的安装或升级入口。
+不要把发布维护者的 `release/rk3576-open-source` 分支名用于从 GitHub 安装；公开仓库的安装入口是 `main`。旧实验安装器和通用插件原型已移除，当前仅维护这一套优化实现。
 
 ## 1. Ubuntu 24.04、22.04、20.04 是否兼容
 
@@ -35,6 +35,12 @@
 - Ubuntu 20.04 已结束标准安全维护；新装办公设备优先选厂商支持的 24.04 镜像。若必须用 20.04，应另外安排其安全维护。
 
 **验证边界：** 本文安装命令按当前源码与现有板的构建产物核对；没有第二块空白板的端到端安装记录，也没有 22.04/20.04 的硬件运行记录。现有 24.04 的验收见 [优化记录](validation/2026-10-10-rk3576-optimization.md)。
+
+## 无头运行与两个服务
+
+本项目默认无头使用：不需要连接显示器、HDMI 虚拟插头或启动本地显示管理器。RDP 登录后，sesman 启动 xorgxrdp 虚拟 Xorg 和 Xfce。仍需安装 Xorg/Xfce 等桌面软件。
+
+`xrdp-rkmpp` 监听 3389，负责远程连接和编码；`xrdp-rkmpp-sesman` 负责登录与桌面会话。两者组成一套服务，不是两种编码版本，也不需要额外对外开放 sesman 端口。详见 [架构说明](architecture.md)。
 
 ## 2. 准备系统并确认目标板
 
@@ -139,9 +145,9 @@ CMake 会检查 Linux/ARM64、MPP 和 Xorg 等开发依赖。它使用厂商已�
 
 构建仅写入 `build/`，不会写入系统 `/opt`、安装软件包或启动服务。可以重复构建；集成源码或补丁变更后，会从未修改的上游检出重建生成目录。详细产物、离线镜像和只检查源码模式见 [CMake 构建指南](building.md)。**已在 RK3576 上完成原生编译、产物和独立硬编码验证**，见 [板端记录](validation/2026-10-13-cmake-native.md)。新板仍需继续完成安装及实际 RDP 验收。
 
-## 6. 首次安装独立 3391 服务
+## 6. 首次安装独立 3389 服务
 
-**仅在新板且没有同名实例时执行本节，已有安装不能重跑。** 这里直接使用第 5 节的 stage 产物，不依赖另一套 XRDP、旧配置或原维护者的实验账号。不要用 `install-test.py` 或 `install-lab-release.py` 替代：这些历史工具面向既有实验布局，不支持本教程的 `xrdp-rkmpp` 安装。
+**仅在新板且没有同名实例时执行本节，已有安装不能重跑。** 这里直接使用第 5 节的 stage 产物，不依赖另一套 XRDP、旧配置或原维护者的实验账号。如已有其他 XRDP 占用 3389，先检查会话并备份，在维护窗口停用旧实例，再继续本节；不要为了绕过冲突而同时留下多套服务。
 
 下方安装块会检查 RK3576、空闲端口、目录和 unit 冲突，从本次 stage 建立配置，生成**本机独立密钥**，安装账号/权限和两个 systemd unit。它只准备文件；启动放在下一节。不要求固定的主机名或桌面用户名。
 
@@ -190,7 +196,7 @@ test ! -e /tmp/.X50-lock
 python3 -S - <<'PY'
 import socket
 with socket.socket() as s:
-    s.bind(('0.0.0.0', 3391))
+    s.bind(('0.0.0.0', 3389))
 PY
 # PAM 的服务名是上游固定的；已存在且不同则先人工核对，不能覆盖。
 pam="$b/stage/etc/xrdp-rkmpp/pam.d/xrdp-sesman"
@@ -234,7 +240,7 @@ def section(path, name, values=None, body=None):
     path.write_text(text[:match.start()] + '[' + name + ']\n' + body + '\n' + text[match.end():])
 
 section(c/'xrdp.ini', 'Globals', {
-    'port': '3391', 'runtime_user': 'xrdp', 'runtime_group': 'xrdp',
+    'port': '3389', 'runtime_user': 'xrdp', 'runtime_group': 'xrdp',
     'certificate': str(c/'cert.pem'), 'key_file': str(c/'key.pem'),
     'autorun': 'Xorg', 'allow_multimon': 'false'})
 section(c/'xrdp.ini', 'Logging', {'LogFile': '/var/log/xrdp-rkmpp/xrdp.log', 'LogLevel': 'INFO'})
@@ -290,7 +296,7 @@ WantedBy=multi-user.target
 UNIT
 cat > /etc/systemd/system/xrdp-rkmpp.service <<UNIT
 [Unit]
-Description=RK3576 MPP XRDP on 3391
+Description=RK3576 MPP XRDP on 3389
 Requires=xrdp-rkmpp-sesman.service
 After=network.target xrdp-rkmpp-sesman.service
 [Service]
@@ -332,7 +338,7 @@ sudo "$XRDP_BUILD/test-lifecycle"
 sudo systemd-analyze verify /etc/systemd/system/xrdp-rkmpp*.service
 sudo systemctl start xrdp-rkmpp-sesman xrdp-rkmpp
 systemctl is-active xrdp-rkmpp-sesman xrdp-rkmpp
-sudo ss -ltnp '( sport = :3391 )'
+sudo ss -ltnp '( sport = :3389 )'
 ```
 
 `ldd` 不能出现 `not found`；正常可见 `librockchip_mpp` 和 x264。库文件名/SONAME 以该板实际链接结果为准，不手工创建 `.so.0`/`.so.1` 替代链接。独立测试使用 root 只为排除测试账号权限影响，**还必须通过实际 RDP 验证服务账号的硬件访问**。
@@ -348,9 +354,9 @@ SUBSYSTEM=="dma_heap", KERNEL=="system", GROUP="video", MODE="0660"
 
 ## 8. Windows 连接与确认硬编码
 
-Windows 运行 `mstsc`，填写 **新板实际 IP:3391**，用普通 Linux 用户及其密码登录，选择 **Xorg**。第一次连接会提示自签证书，核对目标板。也可复制 [RDP 示例](../rk3576/RK3576-optimized.rdp)，把 `full address` 和 `username` 改成新板信息；示例使用不可解析的地址且不包含用户名。
+Windows 运行 `mstsc`，填写 **新板实际 IP**（默认 3389，也可显式加 `:3389`），用普通 Linux 用户及其密码登录，选择 **Xorg**。第一次连接会提示自签证书，核对目标板。也可复制 [RDP 示例](../rk3576/RK3576-optimized.rdp)，把 `full address` 和 `username` 改成新板信息；示例使用不可解析的地址且不包含用户名。
 
-防火墙已启用时，仅向需要的局域网放行 3391/TCP；不要直接关闭防火墙。桌面密码由系统账号管理，教程不会设置固定密码。若同一用户已在 HDMI 本地桌面登录，先退出本地会话或使用独立办公账号，避免桌面会话冲突。
+防火墙已启用时，仅向需要的局域网放行 3389/TCP；不要直接关闭防火墙。桌面密码由系统账号管理，教程不会设置固定密码。若同一用户已在 HDMI 本地桌面登录，先退出本地会话或使用独立办公账号，避免桌面会话冲突。
 
 在 **RDP 桌面的终端**执行：
 
@@ -374,7 +380,7 @@ grep -Ei 'rkvenc|venc' /proc/interrupts
 3. 拖动、变色、窗口缩放和断开后重连正常；确认 Xorg 日志没有模块加载或 ABI 错误。
 4. 1080p/1440p、需要时 4K 实测流畅度；动画绘制次数不是客户端实际帧率。严格模式只禁止 MPP 失败后的软件回退，客户端仍须协商 H.264，不能用 RFX 会话证明硬编码。
 
-`run-lan-benchmark.py` 等旧实验工具还要求专用客户端、实验服务和目录布局，不能仅填入新板地址就用于本教程的公开安装。首次验收使用上面的动画、日志和实际 RDP 连接即可；历史压测环境见 [无人值守说明](unattended-benchmark.md)。
+首次验收使用上述动画、日志和实际 RDP 连接；自动化边界见 [桌面负载验证](unattended-benchmark.md)。旧实验服务的安装和压测包装脚本已移除。
 
 ## 9. 验收通过后启用日常模式
 
@@ -392,7 +398,7 @@ sudo systemctl enable xrdp-rkmpp-sesman xrdp-rkmpp
 systemctl show xrdp-rkmpp -p Environment
 ```
 
-重启会断开该端口连接；新连接才会使用新的环境设置。日常模式保留明确记录的软件回退。后续维护使用 `xrdp-rkmpp` 服务名、配置和日志路径；旧实验安装器不支持本教程的升级。
+重启会断开该端口连接；新连接才会使用新的环境设置。日常模式保留明确记录的软件回退。后续维护使用 `xrdp-rkmpp` 服务名、配置和日志路径；更新步骤见下一节。
 
 ## 10. 获取后续公开版本
 
@@ -416,7 +422,7 @@ printf 'Source ready for build: %s\n' "$SHA"
 
 按第 5 节重新运行 CMake 配置和构建，然后重新载入 `build/install-env.sh`；当前 SHA 会用于两部分的版本目录。首次安装器会拒绝覆盖现有实例；目前没有经空白板与升级场景完整验收的一键升级工具。
 
-切换已安装版本前，安排会话中断窗口并备份 `/etc/xrdp-rkmpp/`、两个 unit 及其 drop-in 配置。需要成对部署新 XRDP/Xorg 前缀，更新两个 unit 的 `ExecStart`、`sesman.ini` 中的 Xorg `-modulepath` 和动画程序，保留现有证书、PAM、用户与日常配置；先完成独立测试，再重新执行实际 RDP 验收。保留旧前缀和配置备份供回退，验收完成后更新 `source-commit`。不要用首次安装块或旧实验升级脚本覆盖运行中的实例。
+切换已安装版本前，安排会话中断窗口并备份 `/etc/xrdp-rkmpp/`、两个 unit 及其 drop-in 配置。需要成对部署新 XRDP/Xorg 前缀，更新两个 unit 的 `ExecStart`、`sesman.ini` 中的 Xorg `-modulepath` 和动画程序，保留现有证书、PAM、用户与日常配置；先完成独立测试，再重新执行实际 RDP 验收。将旧前缀和配置保存为可验证的回退归档；验收通过且无进程引用后清除旧安装前缀，只保留一套启用的服务，更新 `source-commit`。不要用首次安装块覆盖运行中的实例。
 
 ## 11. 排错、停用和后续维护
 
@@ -427,7 +433,7 @@ printf 'Source ready for build: %s\n' "$SHA"
 | 登录后黑屏或马上退出 | `/var/log/xrdp-rkmpp/sesman.log`、用户 `~/.xorgxrdp.50.log`、Xfce/dbus 是否安装 |
 | Xorg 模块 ABI/符号错误 | 是否使用同一板端的 Xorg SDK 构建；模块路径是否指向当前 `$XPREFIX` |
 | MPP 初始化失败或回退 x264 | 设备权限、BSP/MPP 匹配、对应新连接日志；严格模式下先修复再继续 |
-| 3391 无法访问 | systemd 状态、监听、实际 IP、局域网防火墙；SSH 正常不等于 RDP 端口已放行 |
+| 3389 无法访问 | systemd 状态、监听、实际 IP、局域网防火墙；SSH 正常不等于 RDP 端口已放行 |
 | `Native ARM64 Linux is required` | 完整构建应在开发板原生执行；普通工作站只支持 `XRDP_RKMPP_FETCH_ONLY=ON` 源码检查模式 |
 
 停用本次服务（会断开本次桌面）：

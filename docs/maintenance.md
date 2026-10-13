@@ -2,7 +2,7 @@
 
 ## Preserve reproducibility
 
-Retain the source SHA, pinned upstream archives, build logs, stage tree, configuration backup and sanitized acceptance report for each deployed release. Keep at least one verified rollback version. Raw traces and desktop captures stay outside Git.
+Retain the source SHA, pinned upstream Git revisions, build logs, stage tree, configuration backup and sanitized acceptance report for each deployed release. Keep a verified rollback archive outside active installation paths; do not leave redundant services enabled or old binaries installed after acceptance. Raw traces and desktop captures stay outside Git.
 
 Before updating, inspect actual executable/module paths and connected sessions. A directory's date or name does not establish that it is obsolete. Review configuration, back up the selected instance and plan for its session interruption before switching versions.
 

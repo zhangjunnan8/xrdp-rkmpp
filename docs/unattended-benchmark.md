@@ -1,73 +1,35 @@
-# Isolated desktop benchmark / 隔离桌面测试
+# 桌面负载验证 / Desktop workload checks
 
-> These are historical lab instructions, not a companion installer for public `xrdp-rkmpp` services. The helpers still assume the `xrdp-rk3576-lab` service/configuration layout (and some older helpers use another lab instance). Replacing site addresses or using the same port does not adapt them to the public namespace. Public users should start with the animation and hardware-log checks in [the installation guide](new-board-install.md).
+当前只部署一套优化版，默认 TCP **3389**。使用空闲测试板或已约定的维护窗口；不要在办公会话中自动执行负载、重启或更改分辨率。
 
-> 本文保留原实验布局与数据复现方式；不能直接用于公开教程的 `xrdp-rkmpp` 实例。首次验收使用安装教程，不要仅替换 IP、服务名或路径就运行这些实验脚本。
+## 无头真实桌面负载
 
-The synthetic application creates real X11 windows, movement, tables, small text and changing pixels. The default cycle spends 20 seconds each on movement, color changes and both. It exercises composition, capture, conversion, encoding, transport and decoding; it does not simulate disk I/O or measure physical input latency. Animation draw counts are not encoded FPS.
+通过 Windows 远程桌面或启用 H.264 的 FreeRDP 连接后，在该 RDP 桌面的终端运行：
 
-## Session isolation
-
-The current helpers are deliberately restricted to **TCP 3391 / Xorg :50** and one connected benchmark client. The separate decoding host uses its own **Xvfb :97** and FreeRDP. `profile-session.py` checks the actual client IP, XRDP PID, connected Xorg PID and completed hardware frame before drawing. It rejects another display, software fallback or unexpected clients.
-
-3391 必须是隔离测试实例。如果它已用于办公，不要运行这些工具。旧 `rdp-soak.py` 面向 3390 / :30，不适合代替当前测试。改端口需同步审核相关工具，不要只修改一个数字。
-
-## Prepare the independent client
-
-The controller requires Python 3 and Paramiko. Verify both SSH host keys out of band and save them to the controller's standard `known_hosts`; unknown or changed keys are rejected. It logs into the board as root for tracing, and into the decoder host as a normal benchmark account. No SSH or RDP password is stored by these tools.
-
-The decoder host must be Linux x86_64 and already contain this private client layout (replace `CLIENT_BASE` with your own directory):
-
-```text
-CLIENT_BASE/
-  root/usr/bin/Xvfb
-  root/usr/lib/x86_64-linux-gnu/    # dependencies of the private packages
-  freerdp-ffmpeg-install/bin/xfreerdp
-  freerdp-ffmpeg-install/lib/
-  test-desktop                   # compile test_desktop.c on this client host
+```bash
+xrdp-rkmpp-motion-test 60 cycle
 ```
 
-The recorded measurements used **FreeRDP 2.11.5 with H.264/FFmpeg enabled**. Some distribution builds disable AVC support. Check the actual client's `/buildconfig` and negotiated codec. These private packages are not supplied or automatically installed. Build the helper natively on the decoder host:
+程序创建真实 X11 窗口，每 20 秒切换移动、变色、移动加变色三种负载。它经过桌面绘制、抓屏、转换、编码、传输和客户端解码；不模拟磁盘 I/O，也不测量物理输入延迟。绘制次数不等于客户端呈现 FPS。
 
-```sh
-cc -O2 -Wall -Wextra -Werror /path/to/rk3576/test_desktop.c -lX11 -o "$CLIENT_BASE/test-desktop"
+在 SSH 终端检查本次连接与硬件活动：
+
+```bash
+sudo ss -tnp '( sport = :3389 )'
+sudo grep -E 'selected RK3576|first hardware frame complete|switching to x264|MPP:' \
+  /var/log/xrdp-rkmpp/xrdp.log | tail -40
+sudo cat /proc/mpp_service/rkvenc-core0/sessions-info
+grep -Ei 'rkvenc|venc' /proc/interrupts
 ```
 
-The client uses certificate trust-on-first-use (`/cert:tofu`), not blanket certificate ignore. Establish and verify the test endpoint's certificate before unattended runs; certificate changes may require interactive review. The first-use trust model is not a substitute for checking the intended endpoint.
+日志必须属于刚连接的进程，看到首个硬件帧完成，运行期间没有回退。分别检查 1080p/1440p、需要时 4K、重连和客户端动态分辨率调整。独立编码/解码测试见 [安装教程](new-board-install.md)。
 
-## Configure and run
+## 独立客户端自动化
 
-Copy [the example JSON](../examples/lab.example.json) to `.local/lab.json` on the controller and replace **every site value**. The example uses RFC 5737 documentation addresses and role names; it cannot target the original development network. Never commit the populated file.
+自动验证需要另一台 Linux 客户端的 Xvfb 和支持 AVC420 的 FreeRDP。使用专用 Xvfb 显示号、普通桌面账号和当前服务的实际地址，验证服务证书并通过 stdin 提供密码。客户端断开只应结束测试自己创建的进程。服务端通过该连接的实际 Xorg 显示号和授权文件启动动画，不能把历史显示号当作所有权证明。
 
-| Key | Meaning |
-|---|---|
-| `board_host` | Board IPv4 address or DNS name, reachable from controller and client |
-| `board_hostname` | Exact `hostname` on the expected RK3576 board |
-| `board_repo` | Absolute board source checkout; must contain the current helpers |
-| `board_build_root` | Allowed parent of the native XRDP build directory |
-| `board_results_root` | Existing parent where new `bench-LABEL` results are written |
-| `client_host`, `client_user` | SSH endpoint/account on the independent decoder |
-| `client_ip` | Decoder IPv4 address as observed by the board's TCP connection |
-| `client_base` | Absolute directory with the private client layout above |
-| `rdp_user` | Existing non-root desktop user on the board |
+可在客户端编译 `rk3576/test_desktop.c`（依赖 X11）来调整自己的 FreeRDP 窗口。不要仅靠 FreeRDP 进程存活判断桌面正常；还需服务端 Xorg/窗口管理器日志、编码完成和客户端解码检查。
 
-The example directories must be replaced or created deliberately. Record the same source SHA on the controller and board. The CLI validates configuration and board identity before starting its test client. Password input is interactive by default or via stdin with `--password-stdin`, never a command-line password.
+历史固定端口、服务路径和现场配置的自动化包装脚本已从当前树移除；它们及旧通用原型可从 Git 历史查阅。2026-10-10 的 [性能数据](performance.md) 与 [原始验证报告](validation/2026-10-10-rk3576-optimization.md) 保留原始测量条件，删除旧工具不产生新的性能结果。
 
-```sh
-python rk3576/run-lan-benchmark.py /absolute/board/build/SHA run-1440 \
-  --config .local/lab.json
-python rk3576/run-lan-benchmark.py /absolute/board/build/SHA resize-run \
-  --config .local/lab.json --resize-soak --seconds 60
-```
-
-The second command keeps one connection through 1440p → 1080p → 4K → 1080p → 1440p. It closes only its own FreeRDP and Xvfb processes. Client lifetime is capped at 30 minutes. Results download to `.local/validation/LABEL/`; board raw output remains under `board_results_root`. Inspect logs before rerunning a failed label; directories are not silently overwritten.
-
-The profiler creates and removes its own tracefs instance. Reports exclude the first 2 seconds of each phase and include encoded FPS, capture/encode durations, ACKs, CPU, RSS and fd counts. Success requires hardware activity, zero encoder return errors, no runtime fallback and no trace loss. Memory/queue observations still require interpretation; finite success is not an unlimited stability guarantee.
-
-## Legacy helpers and service changes
-
-Board-side lab scripts require `XRDP_LAB_HOSTNAME` and (except the first-install helper) `XRDP_LAB_USER`. Profiling also requires `XRDP_LAB_CLIENT`; local loopback tests must explicitly set it to `127.0.0.1`. Legacy on-board client scripts require `XRDP_LAB_CLIENT_TOOLS`, pointing to the prepared private tools root.
-
-These parameters remove site information from source; they do not make old installers universal. `install-test.py` still requires a pre-existing pilot configuration/PAM/modules. `install-lab-release.py` expects existing lab units, a versioned animation symlink and display :50. It can stop that instance; use the [fresh-board recipe](new-board-install.md) for new installations.
-
-本次公开整理仅对参数和保护逻辑做隔离检查，没有为了证明脚本可运行而重新连接正在办公的 RDP 会话。历史性能数据来自原已验证的固定现场配置，移植后的自动化脚本仍需在新隔离环境完成端到端复测。
+English: the retained X11 animation exercises the real desktop path on the single default 3389 instance. Run it only in a dedicated session. Hardware completion logs and RKVENC activity prove encoding; draw counts do not prove delivered FPS. Historical multi-instance wrappers are no longer part of this source tree.

@@ -1,6 +1,6 @@
 # Development workflow / 开发流程
 
-The active implementation is the RK3576 direct MPP path, built by root CMake. The generic ABI prototype is historical and requires explicit opt-in; see [repository overview](../README.en.md).
+The active implementation is the RK3576 direct MPP path, built by root CMake. Historical generic code and old multi-instance deployment tools are removed; see [repository overview](../README.en.md).
 
 ## Source and board responsibilities
 
@@ -10,8 +10,8 @@ Keep one authoritative source checkout for edits, review and commits. The board 
 2. Make focused changes and run applicable static checks. Record the exact source SHA.
 3. Transfer that commit using your Git server, SSH or a Git bundle. Never copy private keys to the board.
 4. Check the board's status, then check out the exact SHA. A directory name or “latest” is not proof of matching source.
-5. Use the root [CMake build](building.md) to fetch pinned upstream sources and stage both components in an ignored build directory. Inspect `build-info.json` and use a clean source checkout for deployment. Legacy archive scripts remain available for existing workflows.
-6. Run affected standalone tests first. Hardware and RDP changes require native validation on an isolated instance with no unrelated desktop sessions.
+5. Use the root [CMake build](building.md) to fetch pinned upstream sources and stage both components in an ignored build directory. Inspect `build-info.json` and use a clean source checkout for deployment.
+6. Run affected standalone tests first. Hardware and RDP changes require native validation on an idle test board or during an agreed maintenance window, with no unrelated desktop sessions. Remove temporary comparison installations after acceptance.
 7. Record source SHA, dirty/clean state, compiler, BSP/MPP/Xorg versions, client, settings, commands, results and limitations. Save sanitized summaries under `docs/validation/`.
 
 本机维护源码，板端按确切提交原生构建。现场改动先保存补丁并回收到主检出，不能直接覆盖；未经验证的编译成功不能标记为硬编码成功。任何已经用于办公的测试端口都要按真实办公会话对待。

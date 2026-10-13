@@ -1,83 +1,35 @@
-# 架构草案
+# 单套无头桌面的架构 / Single headless instance
 
-> Historical generic prototype / 历史通用原型：不用于当前 RK3576 直接硬编码路径。当前实现见 [RK3576 integration](../rk3576/README.md)。
-
-状态：长期设计方向。阶段 1 已实现的范围见 [API v1](api-v1.md)；以头文件、测试和兼容版本说明为准。自动选择、运行中回退、硬件后端及 XRDP 接入仍属于后续阶段。
-
-## 模块边界
+本项目只维护优化后的 RK3576 直接 MPP 实现。默认安装一套服务，使用标准 RDP 端口 **3389**；不安装对照版软件编码服务或早期 MPP 服务。
 
 ```text
-标准 RDP 客户端
-       ↕ RDP / EGFX
-XRDP 协议及桌面捕获
-       ↕ 薄适配层：帧、更新区域、重连和分辨率事件
-CodecBridge 核心
-       ↕ 版本化 C ABI
-后端插件：软件编码 / Rockchip MPP / 后续 V4L2 或厂商 API
-       ↕
-实际编码硬件或 CPU
+RDP 客户端 → TCP 3389 → xrdp-rkmpp
+                           ↕ 本地会话管理
+                     xrdp-rkmpp-sesman
+                           ↓
+                 虚拟 Xorg + xorgxrdp + Xfce
+                           ↓
+           脏区域抓屏 → NEON BGRA→NV12 → MPP → RKVENC
+                           ↓
+                   H.264 AVC420 → RDP 客户端
 ```
 
-XRDP 适配层处理 RDP 生命周期和图像更新语义；核心负责插件加载、能力匹配、状态、诊断和回退；后端负责具体编码 API。首版以现有 H.264 AVC420 数据路径集成，继续利用 XRDP 既有的软件编码作为运行基线和回退选项。
+`xrdp-rkmpp` 负责 RDP 连接、传输与编码；`xrdp-rkmpp-sesman` 负责登录、权限和桌面会话生命周期。两个 systemd unit 组成同一套远程桌面，只有前者监听对外的 3389。Xorg 显示号 `:50` 是内部会话标识，不是另一个 RDP 端口。
 
-桌面渲染、捕获、色彩转换、视频编码是不同环节。编码后端不承诺自动加速其他环节，也不将 Mali GPU、NPU 或 DRM 节点的存在视为编码器存在的证据。
+无头桌面由 xorgxrdp 的虚拟 Xorg 设备创建，不依赖已连接的 HDMI/DP 显示器或本地显示管理器。仍须安装 X11/Xorg/Xfce 软件；MPP 只加速视频编码，桌面绘制和部分内存传输仍消耗 CPU。
 
-## 插件契约
+## 唯一维护的编码路径
 
-使用具有版本和结构体大小字段的纯 C 函数表，由 Linux `.so` 暴露 `cb_backend_query` 查询入口。首个插件为 `cb_backend_x264.so`。SDK 不暴露 MPP、V4L2、VAAPI 等厂商或系统专属类型。
+`xrdp_encoder_mpp.c` 直接实现 XRDP H.264 回调，使用持久化 DMA 输入、局部更新、明确缓存同步和有限等待。`nv12-neon.c` 加速颜色转换；`xrdp_mpp_pipeline.inc` 在输入所有权转移后允许抓屏与编码重叠，保留客户端 ACK 和上游在途帧限制。
 
-契约应覆盖：
+公开部署启用 `XRDP_MPP_DIRECT=1` 和 `XRDP_MPP_PIPELINE=1`。这些是同一实现的运行开关，便于故障定位；不生成第二套服务器。安装与头文件版本由根目录 CMake 统一管理。
 
-- 查询 ABI 兼容性、后端身份、实现版本。
-- 探测设备并返回能力、不可用原因及所需权限。
-- 创建编码会话、提交帧、接收编码包、请求关键帧、排空和销毁。
-- 明确输入帧、输出包、文件描述符的所有权与释放规则。
-- 明确超时、暂不可用、设备忙、格式不支持和致命错误。
-- 同一会话的调用默认串行；并发会话使用独立句柄。
+## 软件回退的范围
 
-提交与取包分开设计，以容纳异步硬件 API。XRDP 同步回调通过有界等待适配，不能无限阻塞。每个输入带帧标识、时间戳和配置代次，用来识别重建前的迟到输出。
+MPP 失败时，同一个 XRDP 进程可调用上游 x264 回退，重建完整帧并发送恢复 IDR，日志明确记录切换。`XRDP_MPP_STRICT=1` 在硬件验收时禁止此回退；日常模式为 `0`。x264 是这条故障恢复路径的依赖，不是额外安装的对照服务。RDP 客户端的编码能力仍需协商，严格模式不强迫客户端支持 H.264。
 
-首版的“可插拔”指部署独立后端并在会话创建时选择。动态卸载或切换插件必须等对应会话和缓冲区释放，不承诺任意时刻热拔插。
+当前源码树已移除通用 CodecBridge ABI、插件加载器、独立 x264 插件和绑定旧实验布局的构建/安装/压测脚本。旧实现可从 Git 历史查阅；性能报告保留当时真实的构建标识与条件。没有新增树莓派、全志或其他 GPU 的兼容层。
 
-## 能力与数据模型
+English: one optimized RK3576 implementation, one RDP listener on TCP 3389, and two cooperating services (listener and session manager). The virtual Xorg desktop is headless. Upstream x264 remains an in-process failure recovery dependency, not a second server installation.
 
-能力模型按具体设备描述编码格式、profile、输入格式、内存类型、尺寸与对齐限制、低延迟选项，以及驱动实际提供的控制功能。声明值要经过创建会话和提交样本帧验证；运行失败要回报具体原因。
-
-首版固定为 H.264、NV12 和 CPU 可访问内存。帧描述包含有效尺寸、各平面步长、颜色矩阵、颜色范围和更新时间戳。预留以后引入 DMA-BUF 的扩展空间，但没有实现的内存类型必须返回不支持。
-
-XRDP 的局部更新需要合成为持续有效的完整画面。适配层负责说明输入哪些区域有效，并由明确的一层维护完整帧；不能把未初始化的非更新区域提交给硬件。后端负责将完整帧复制或导入符合驱动对齐要求的缓冲区。
-
-输出需要明确 H.264 码流封装、完整 access unit 边界、关键帧标记和配置代次。尺寸变化或编码器切换后重新发送必要的 SPS/PPS 和 IDR，不能沿用旧编码器的参考帧状态。
-
-## 后端策略
-
-| 后端 | 初期用途 | 状态与边界 |
-|---|---|---|
-| 软件编码 | 建立协议和测试基线；故障回退 | 阶段 1 实现或封装，首版保留 XRDP 既有 x264 路径 |
-| Rockchip MPP | RK3576 首个硬件后端 | 阶段 2；硬件独立编码已验证，插件未实现 |
-| V4L2 编码接口 | 后续适配具备相应编码设备的板卡 | 候选；按设备能力区分接口，不能假设所有 V4L2 节点都支持编码 |
-| 全志厂商接口 | 适配具体型号和驱动栈 | 候选；先确认 API、可用编码功能和分发许可 |
-| VAAPI / NVENC 等 | 后续扩展到其他 Linux 主机 | 预留，不纳入首个硬件里程碑 |
-
-树莓派不使用按品牌硬选后端的逻辑。具体型号缺少硬编码器时回退到软件。RK3576 上 MPP 的集成结果也不能自动推广为其他 Rockchip 型号已通过验证。
-
-## 故障处理与性能
-
-自动选择模式按显式优先级探测后端；另提供指定后端并在失败时明确报错的验证模式，防止测试过程中悄悄回退。日志区分已发现、已创建、已提交和已输出首个硬编码帧。
-
-硬件返回可恢复错误时限制重试次数和等待时间；致命错误触发会话重建或软件回退。设备切换需要重置码流状态。进程内插件无法隔离崩溃或卡在内核中的调用；若稳定性验证暴露这类问题，后续再引入独立编码工作进程。
-
-测量编码耗时分位数、排队时间、吞吐量、CPU、内存和端到端响应。办公场景同时检查小字、彩色文字、滚动、窗口拖动和静止后的画面恢复。GPU/VPU 活动和设备访问作为辅助证据，最终确认依据为成功完成的硬编码输出及其可解码性。
-
-## 集成与维护
-
-核心和后端独立构建，厂商依赖可选。使用小规模 XRDP 适配补丁记录接入方式，固定上游版本并保留原版权和许可信息。新后端需要共享的契约测试和板卡实测记录。
-
-首轮联调使用独立安装前缀、配置、服务及确认空闲的测试端口。比较当前软件基线与候选硬编码版，再进行正式切换。Windows mstsc 是首要客户端验证目标，FreeRDP 用于自动化验证；其他客户端有实际测试后再标记支持。
-
-参考：
-
-- [XRDP H.264 编码接口](https://github.com/neutrinolabs/xrdp/blob/v0.10.6.1/xrdp/xrdp_encoder_x264.c)
-- [Rockchip MPP 编码示例](https://github.com/rockchip-linux/mpp/blob/develop/test/mpi_enc_test.c)
-- [XRDP 上游硬件编码讨论](https://github.com/neutrinolabs/xrdp/issues/3886)
-- [Raspberry Pi 5 编码硬件说明](https://www.raspberrypi.com/news/optimising-raspberry-pi-5s-software-environment/)
+See [installation](new-board-install.md), [encoder details](../rk3576/README.md) and [limitations](known-limitations.md).

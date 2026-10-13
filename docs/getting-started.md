@@ -2,7 +2,7 @@
 
 This is the English build/installation overview for **[zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp), branch `main`**. The [complete installation recipe](new-board-install.md) includes dependency checks, guarded configuration generation and service units. Hardware validation currently covers one KICKPI K7 with vendor Ubuntu 24.04 arm64/Linux 6.1.75. Read [known limitations](known-limitations.md) first.
 
-The public installation uses service names `xrdp-rkmpp` and `xrdp-rkmpp-sesman`, configuration under `/etc/xrdp-rkmpp/xrdp`, logs under `/var/log/xrdp-rkmpp`, and runtime sockets under `/run/xrdp-rkmpp`. TCP 3391 and Xorg display :50 are deliberate isolation defaults; both must be available. No private repository, original development account or existing pilot installation is required.
+The public installation uses service names `xrdp-rkmpp` and `xrdp-rkmpp-sesman`, configuration under `/etc/xrdp-rkmpp/xrdp`, logs under `/var/log/xrdp-rkmpp`, and runtime sockets under `/run/xrdp-rkmpp`. TCP 3389 is the standard RDP endpoint and :50 is the virtual Xorg display offset; both must be available. The two units form one instance: listener/encoder and session manager. Headless operation needs no connected display or dummy plug, but does require Xorg/xorgxrdp/Xfce software. No private repository, original development account or existing pilot installation is required.
 
 ## Prerequisites
 
@@ -35,16 +35,16 @@ See [the CMake guide](building.md) for pinned revisions, output paths, build log
 
 ## Install and validate
 
-Follow sections 6–9 of the [fresh-board recipe](new-board-install.md). It checks hardware, port and path conflicts; creates independent configuration, keys and service units; grants narrowly scoped device-group access; and leaves initial service startup explicit. Do not substitute the legacy lab installers: they assume a pre-existing pilot installation.
+Follow sections 6–9 of the [fresh-board recipe](new-board-install.md). It checks hardware, port and path conflicts; creates independent configuration, keys and service units; grants narrowly scoped device-group access; and leaves initial service startup explicit. The old lab installers have been removed. If 3389 is occupied, inspect and back up the old service, then retire it during a maintenance window before installation.
 
-Use a normal desktop account, connect to the board on TCP 3391 with Windows Remote Desktop or an H.264-capable FreeRDP client, and verify the new connection's hardware-frame log and encoder activity. The RDP example intentionally contains a non-routable placeholder and no username. Set the real endpoint locally.
+Use a normal desktop account, connect to the board on TCP 3389 with Windows Remote Desktop or an H.264-capable FreeRDP client, and verify the new connection's hardware-frame log and encoder activity. The RDP example intentionally contains a non-routable placeholder and no username. Set the real endpoint locally.
 
 The initial instance uses strict MPP validation. In its RDP desktop, run `xrdp-rkmpp-motion-test 60 cycle`; inspect `/var/log/xrdp-rkmpp/xrdp.log` for the current connection's `first hardware frame complete` and no `switching to x264`. After successful actual RDP validation, allow logged x264 fallback for daily use (`XRDP_MPP_STRICT=0`). Restarting that instance disconnects its desktop, so save work first. Avoid modifying another XRDP installation or an active office session.
 
 ## Later source updates and deployment
 
-Section 10 of the [complete recipe](new-board-install.md#10-获取后续公开版本) fetches the public repository's `main`, checks for local changes, and records a new SHA before building. Fetching source or building a stage does not upgrade the running desktop. The installer rejects an existing instance; there is no validated one-command updater. Preserve configuration, certificates and the old prefixes, schedule session downtime, deploy matching XRDP/Xorg builds, and repeat acceptance before recording the new installed SHA.
+Section 10 of the [complete recipe](new-board-install.md#10-获取后续公开版本) fetches the public repository's `main`, checks for local changes, and records a new SHA before building. Fetching source or building a stage does not upgrade the running desktop. The installer rejects an existing instance; there is no validated one-command updater. Preserve configuration, certificates and a verified rollback archive, schedule session downtime, deploy matching XRDP/Xorg builds, and repeat acceptance before recording the new installed SHA. Remove obsolete prefixes after checking that no process references them; keep only one enabled instance.
 
-Legacy lab helpers retain their original service and directory assumptions and cannot be used directly to install, upgrade or profile this public namespace. Use the documented manual animation/log checks for first acceptance.
+Historical multi-instance helpers and the generic plugin prototype are no longer included. Use the documented manual animation/log checks for first acceptance.
 
 The installation recipe has been syntax/configuration-checked, not independently replayed end-to-end on a second blank board. The [native CMake checks](validation/2026-10-13-cmake-native.md) cover build artifacts and standalone encoding, not deployment of the public service namespace or a new RDP session. See also [public installation checks](validation/2026-10-11-public-install.md). English instructions do not expand that validation claim.

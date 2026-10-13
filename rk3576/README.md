@@ -11,9 +11,9 @@ cmake -S . -B build
 cmake --build build --parallel 4
 ```
 
-Unexpected upstream commits or source layouts stop the build. Builds stage versioned prefixes and do not change running services. Xorg modules are staged under the versioned module directory, not the system module directory. See [CMake details](../docs/building.md); native validation of this new build orchestration is pending.
+Unexpected upstream commits or source layouts stop the build. Builds stage versioned prefixes and do not change running services. Xorg modules are staged under the versioned module directory, not the system module directory. See [CMake details](../docs/building.md); native compilation and independent encoding validation are recorded in [the native checks](../docs/validation/2026-10-13-cmake-native.md).
 
-Public installations clone `main` from [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp). CMake selects the public `xrdp-rkmpp` / `xrdp-rkmpp-xorg` paths and supplies staged headers automatically. Legacy `build.sh` / `build-xorg.sh` archive workflows retain their checksums and existing namespace arguments for compatibility.
+Public installations clone `main` from [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp). CMake selects the public `xrdp-rkmpp` / `xrdp-rkmpp-xorg` paths and supplies staged headers automatically. This is the only supported build entry point; historical archive scripts have been removed.
 
 ## Encoder behavior
 
@@ -36,13 +36,9 @@ Public installations clone `main` from [zhangjunnan8/xrdp-rkmpp](https://github.
 | `test-lifecycle` | Repeated creation, resize, destruction, invalid input and software recovery |
 | `test-nv12`, `test-pipeline` | Bit-exact conversion and bounded command parsing/ownership checks |
 | `desktop-motion` | Real X11 window movement and changing synthetic pixels |
-| `run-lan-benchmark.py` | Explicitly configured separate LAN client and isolated 3391 / :50 workload |
-| `profile-session.py`, `analyze-session.py` | Frame-level tracing and aggregate analysis |
-| `install-test.py`, `install-lab-release.py`, `lab-run.py`, `rdp-soak.py` | Legacy lab helpers with additional layout requirements; not fresh-board installers |
+| `test_desktop.c` | Optional independent X11 client-window resize/close helper |
 
-`lab_config.py` requires the expected hostname and non-root desktop account explicitly. Known-host SSH verification remains enabled. Read [the lab setup](../docs/unattended-benchmark.md) before using helpers; specifying a different host does not remove their fixed-port/display/layout assumptions. Do not bypass guards with `python -O`.
-
-旧实验工具依赖既有实验服务名、配置、模块路径、PAM 和测试显示号；不能直接用于公开教程的 `xrdp-rkmpp` 安装或压测。新板使用安装教程中的动画和日志验收。3391 若已用于办公，同样不能随意重启或压测。
+Default deployment is one headless Xorg/Xfce instance on TCP 3389. The old multi-instance installers, profiling wrappers and generic plugin prototype have been removed. See [the workload instructions](../docs/unattended-benchmark.md) for retained animation and hardware checks. Never run a workload on an occupied office session.
 
 Performance and validation: [matched optimization data](../docs/performance.md), [initial integration](../docs/validation/2026-10-10-rk3576-direct.md), [optimization acceptance](../docs/validation/2026-10-10-rk3576-optimization.md). Generated captures and raw logs stay outside Git.
 

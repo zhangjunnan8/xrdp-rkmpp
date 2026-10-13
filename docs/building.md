@@ -41,7 +41,7 @@ build/bin/xrdp-sesman --version
 
 These launchers set `LD_LIBRARY_PATH` for the child process to find this build's staged XRDP libraries. Actual ELF executables remain under `xrdp/stage/opt/xrdp-rkmpp/<SHA>/sbin/`; deployment uses those files, not the launchers. Keep the build directory in place or regenerate the launchers after moving it.
 
-Binaries also link against the board's libraries; they are not portable apps and do not create an RDP service. Use [installation steps 6–9](new-board-install.md#6-首次安装独立-3391-服务), starting with:
+Binaries also link against the board's libraries; they are not portable apps and do not create an RDP service. Use [installation steps 6–9](new-board-install.md#6-首次安装独立-3389-服务), starting with:
 
 ```bash
 source build/install-env.sh
@@ -60,7 +60,7 @@ Pins are in [UpstreamVersions.cmake](../cmake/UpstreamVersions.cmake):
 | XRDP | 0.10.6.1 | `80c52879fead585d6347df5b3c587718adf8f5a5` |
 | xorgxrdp | 0.10.5 | `c2d3cbafebe00be3221f985c06ef6b97f1c63790` |
 
-XRDP's `libpainter`, `librfxcodec` and `ulalaca` use gitlinks in that commit. The helper verifies HEAD, tracked changes and submodule state before patching. It does not track moving tags or branch tips. MPP/kernel/Mali drivers remain vendor-provided; do not substitute arbitrary upstream builds. Legacy archive scripts retain checksum checks for existing workflows.
+XRDP's `libpainter`, `librfxcodec` and `ulalaca` use gitlinks in that commit. The helper verifies HEAD, tracked changes and submodule state before patching. It does not track moving tags or branch tips. MPP/kernel/Mali drivers remain vendor-provided; do not substitute arbitrary upstream builds.
 
 ## Workstation checks / 工作站源码检查
 
@@ -83,4 +83,4 @@ Repeated native builds still stage files and rerun CPU checks. Upstream XRDP ins
 
 Retry with `cmake --build` after inspecting component `autoreconf.log`, `configure.log`, `install.log` and ExternalProject logs. Never delete unrecognized directories to bypass ownership guards.
 
-The old prototype requires `-DXRDP_RKMPP_BUILD_LEGACY_PROTOTYPE=ON`; see [legacy instructions](legacy-building.md). It does not build the RK3576 integration. Validation scope: [initial workstation checks](validation/2026-10-11-cmake-build.md) and [native RK3576 build/encoding checks](validation/2026-10-13-cmake-native.md).
+The root build has a single implementation. The generic prototype option and archive build scripts have been removed. Validation scope: [initial workstation checks](validation/2026-10-11-cmake-build.md) and [native RK3576 build/encoding checks](validation/2026-10-13-cmake-native.md).
