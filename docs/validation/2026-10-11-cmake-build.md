@@ -2,6 +2,8 @@
 
 Date: 2026-10-11. Base: public commit `d527c53`. This change makes root CMake the default build entry point for the RK3576 XRDP integration; the old generic prototype requires explicit opt-in.
 
+Follow-up: [2026-10-13 native RK3576 validation](2026-10-13-cmake-native.md) now covers native compilation and standalone encoding. The pending section below records the scope on 2026-10-11.
+
 ## Implemented / 已实现
 
 - Shallow Git fetch at exact XRDP/xorgxrdp commit IDs; XRDP's three submodules use the pinned gitlinks.

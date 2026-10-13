@@ -55,7 +55,7 @@ cmake -S . -B build
 cmake --build build --parallel 4
 ```
 
-根目录 CMake 自动浅拉取固定 Git 提交的 XRDP、其子模块和 xorgxrdp，应用补丁并生成两部分产物；等价于在 `build/` 中执行 `cmake ..` 后编译。二进制快捷入口为 `build/bin/xrdp`、`build/bin/xrdp-sesman`，完整安装树位于 `build/xrdp/stage/` 与 `build/xorgxrdp/stage/`。它不安装系统文件或重启服务，后续部署按安装教程执行。详见 [CMake 构建指南](docs/building.md)。新入口已完成本地源码/流程检查，RK3576 原生构建尚待设备上线后验证。
+根目录 CMake 自动浅拉取固定 Git 提交的 XRDP、其子模块和 xorgxrdp，应用补丁并生成两部分产物；等价于在 `build/` 中执行 `cmake ..` 后编译。二进制快捷入口为 `build/bin/xrdp`、`build/bin/xrdp-sesman`，完整安装树位于 `build/xrdp/stage/` 与 `build/xorgxrdp/stage/`。它不安装系统文件或重启服务，后续部署按安装教程执行。详见 [CMake 构建指南](docs/building.md)。**已在 RK3576 上通过原生编译、产物检查、MPP 硬编码与独立解码验证**，见 [板端验收记录](docs/validation/2026-10-13-cmake-native.md)；本轮未重新部署或进行实际 RDP 会话测试。
 
 部署后在该实例 `gfx.toml` 中选择 `h264_encoder = "MPP"`，并设置 XRDP 服务环境变量：
 

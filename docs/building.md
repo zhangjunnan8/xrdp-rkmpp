@@ -77,8 +77,10 @@ This generates no binary, installation environment file or hardware result. Defa
 
 Re-run the same CMake commands after changes. Integration input changes reconstruct marked generated work trees from pristine upstream checkouts; repeated builds reuse downloads. Do not edit generated files. Only marked output inside the build directory may be replaced.
 
+Repeated native builds still stage files and rerun CPU checks. Upstream XRDP installation refreshes staged header timestamps, so xorgxrdp may compile again even when source content is unchanged; dependency downloads and patching are reused.
+
 `XRDP_RKMPP_XRDP_REPOSITORY` and `XRDP_RKMPP_XORG_REPOSITORY` can point to trusted Git mirrors/local repositories; commit pins still apply. Offline mirrors must also provide XRDP's submodules through Git URL mapping/cache configuration. Use a new build directory when changing repository URLs or build modes.
 
 Retry with `cmake --build` after inspecting component `autoreconf.log`, `configure.log`, `install.log` and ExternalProject logs. Never delete unrecognized directories to bypass ownership guards.
 
-The old prototype requires `-DXRDP_RKMPP_BUILD_LEGACY_PROTOTYPE=ON`; see [legacy instructions](legacy-building.md). It does not build the RK3576 integration. Validation scope: [CMake build checks](validation/2026-10-11-cmake-build.md).
+The old prototype requires `-DXRDP_RKMPP_BUILD_LEGACY_PROTOTYPE=ON`; see [legacy instructions](legacy-building.md). It does not build the RK3576 integration. Validation scope: [initial workstation checks](validation/2026-10-11-cmake-build.md) and [native RK3576 build/encoding checks](validation/2026-10-13-cmake-native.md).

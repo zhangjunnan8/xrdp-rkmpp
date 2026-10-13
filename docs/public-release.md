@@ -51,4 +51,4 @@ Detailed results: [2026-10-11 release checks](validation/2026-10-11-public-relea
 
 The later correction to the public GitHub installation recipe has a separate [installation-check record](validation/2026-10-11-public-install.md). It introduces explicit `xrdp-rkmpp` / `xrdp-rkmpp-xorg` build namespaces; historical benchmark paths remain unchanged in their original reports.
 
-Root CMake now defaults to the active integration and fetches pinned upstream Git commits. The [CMake check record](validation/2026-10-11-cmake-build.md) distinguishes local source/flow checks from pending native board compilation. The archive scripts remain available for historical workflows.
+Root CMake now defaults to the active integration and fetches pinned upstream Git commits. The [initial CMake record](validation/2026-10-11-cmake-build.md) covers workstation source/flow checks; [native RK3576 validation](validation/2026-10-13-cmake-native.md) subsequently covers compilation, staged artifacts and standalone encoding, without deploying the new public services. The archive scripts remain available for historical workflows.

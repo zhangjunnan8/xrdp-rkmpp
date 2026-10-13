@@ -31,7 +31,7 @@ Alternatively, run `cmake ..` and `cmake --build .` inside a new `build` directo
 
 Binaries are exposed as `build/bin/xrdp` and `build/bin/xrdp-sesman`; complete staged install trees are in `build/xrdp/stage/` and `build/xorgxrdp/stage/`. The generated `install-env.sh` sets all variables needed by the installation recipe. Builds run CPU conversion/parser checks, but do not run MPP encoding, install system files or start services. They use the board's existing BSP/MPP rather than rebuilding vendor drivers.
 
-See [the CMake guide](building.md) for pinned revisions, output paths, build logs, mirrors and the workstation `XRDP_RKMPP_FETCH_ONLY` mode. Full compilation requires native Linux ARM64 with matching dependencies. The new orchestration has local source/flow checks only; native RK3576 compilation is pending while the board is offline.
+See [the CMake guide](building.md) for pinned revisions, output paths, build logs, mirrors and the workstation `XRDP_RKMPP_FETCH_ONLY` mode. Full compilation requires native Linux ARM64 with matching dependencies. Native compilation, staged artifacts and standalone MPP encoding with independent decoding have passed on the RK3576 board; see the [native validation record](validation/2026-10-13-cmake-native.md).
 
 ## Install and validate
 
@@ -47,4 +47,4 @@ Section 10 of the [complete recipe](new-board-install.md#10-获取后续公开�
 
 Legacy lab helpers retain their original service and directory assumptions and cannot be used directly to install, upgrade or profile this public namespace. Use the documented manual animation/log checks for first acceptance.
 
-The installation recipe has been syntax/configuration-checked, not independently replayed end-to-end on a second blank board. The public namespace and new CMake orchestration have local checks only; see [public installation checks](validation/2026-10-11-public-install.md) and [CMake checks](validation/2026-10-11-cmake-build.md). English instructions do not expand that validation claim.
+The installation recipe has been syntax/configuration-checked, not independently replayed end-to-end on a second blank board. The [native CMake checks](validation/2026-10-13-cmake-native.md) cover build artifacts and standalone encoding, not deployment of the public service namespace or a new RDP session. See also [public installation checks](validation/2026-10-11-public-install.md). English instructions do not expand that validation claim.

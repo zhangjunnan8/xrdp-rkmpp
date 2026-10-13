@@ -137,7 +137,7 @@ cat "$XORG_BUILD/conversion-test.log" "$XORG_BUILD/conversion-ubsan.log"
 
 CMake 会检查 Linux/ARM64、MPP 和 Xorg 等开发依赖。它使用厂商已安装的 BSP/MPP，不下载或替换内核、Mali 或 MPP 驱动。上游仍通过自己的 Autotools 构建，由 CMake 统一调度；两个子工程内部各使用 4 个 Make 编译任务，可用 `-DXRDP_RKMPP_JOBS=2` 调整。
 
-构建仅写入 `build/`，不会写入系统 `/opt`、安装软件包或启动服务。可以重复构建；集成源码或补丁变更后，会从未修改的上游检出重建生成目录。详细产物、离线镜像和只检查源码模式见 [CMake 构建指南](building.md)。目前该新入口已做本地流程检查，**尚未在 RK3576 上重新完成原生构建**，不要把源码获取/补丁通过当作硬件验收通过。
+构建仅写入 `build/`，不会写入系统 `/opt`、安装软件包或启动服务。可以重复构建；集成源码或补丁变更后，会从未修改的上游检出重建生成目录。详细产物、离线镜像和只检查源码模式见 [CMake 构建指南](building.md)。**已在 RK3576 上完成原生编译、产物和独立硬编码验证**，见 [板端记录](validation/2026-10-13-cmake-native.md)。新板仍需继续完成安装及实际 RDP 验收。
 
 ## 6. 首次安装独立 3391 服务
 
@@ -444,7 +444,7 @@ sudo systemctl disable --now xrdp-rkmpp xrdp-rkmpp-sesman
 
 原版教程在 2026-10-11 完成了 Bash/Python 示例检查、基于历史验收产物的配置生成、unit 校验和 stage 头文件配置验证。那些记录使用的是当时的实验安装名称，不能当作当前公开名称已经在新板部署成功的证明。
 
-手工安装参数的检查范围见 [公开安装参数校验](validation/2026-10-11-public-install.md)，新 CMake 入口见 [CMake 校验记录](validation/2026-10-11-cmake-build.md)。构建参数、配置生成与链接在本地校验；未在第二块空白板完成全流程安装，没有重启现有服务，也没有 Ubuntu 22.04/20.04 的硬件运行记录。
+手工安装参数的检查范围见 [公开安装参数校验](validation/2026-10-11-public-install.md)，CMake 原生编译和独立硬编码见 [板端验收记录](validation/2026-10-13-cmake-native.md)。未在第二块空白板完成全流程安装，本轮没有重启现有服务或重新连接 RDP，也没有 Ubuntu 22.04/20.04 的硬件运行记录。
 
 - [XRDP 0.10.6.1 官方发行版](https://github.com/neutrinolabs/xrdp/releases/tag/v0.10.6.1)、[xorgxrdp 0.10.5 官方发行版](https://github.com/neutrinolabs/xorgxrdp/releases/tag/v0.10.5)。
 - [xorgxrdp 上游构建说明](https://github.com/neutrinolabs/xorgxrdp/tree/v0.10.5)：支持用 `XRDP_CFLAGS` 指定头文件而不预先安装 XRDP。
