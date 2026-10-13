@@ -2,7 +2,7 @@
 
 This repository maintains one implementation: the optimized RK3576 direct MPP integration in `rk3576/`. The generic prototype and historical multi-instance installers have been removed. Do not reintroduce them without a new requirement.
 
-Root CMake defaults to the active integration, fetching pinned upstream Git revisions. `XRDP_RKMPP_FETCH_ONLY` is source/patch checking only; it never counts as native build or hardware validation. Deployment defaults to one headless Xorg/Xfce instance on TCP 3389 with MPP, DIRECT and PIPELINE enabled. The main daemon and sesman are two components of that one instance.
+Root CMake defaults to the active integration, fetching pinned upstream Git revisions. `XRDP_RKMPP_FETCH_ONLY` is source/patch checking only; it never counts as native build or hardware validation. Deployment defaults to one headless Xorg/Xfce instance on TCP 3389 with MPP, DIRECT and PIPELINE enabled. The main daemon and sesman are two components of that one instance. The supplied RDP profile defaults to 1920x1080, with manual resolution changes allowed; do not describe this as a server-enforced limit.
 
 1. Before changes, inspect Git status, branch, commit and remotes. Preserve existing work. Do not merge branches or rewrite published history implicitly.
 2. Keep runtime changes focused. Preserve software fallback, explicit diagnostics, source-buffer ownership, cache synchronization and real client flow control.

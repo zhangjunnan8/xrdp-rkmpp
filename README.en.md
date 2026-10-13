@@ -44,6 +44,8 @@ Start with the [English getting-started guide](docs/getting-started.md) or the [
 
 Public source is on **`main`** at [zhangjunnan8/xrdp-rkmpp](https://github.com/zhangjunnan8/xrdp-rkmpp). The guides consistently use the `xrdp-rkmpp` service/directory namespace. No original development branch, old XRDP installation or lab configuration is required.
 
+The default connection profile uses **1920×1080, one display, TCP 3389**. Set your address in the [RDP template](rk3576/RK3576-optimized.rdp). Window resizing scales the displayed image without automatically increasing the encoded resolution. To use another resolution, edit the profile dimensions or client display settings and reconnect; the server still supports resizing. Connecting by IP alone uses that client's own display settings.
+
 Prerequisites: a working RK3576 BSP/MPP stack, matching Xorg development headers, x264/OpenH264 development packages and an X11 desktop. An ordinary ARM Ubuntu image alone is insufficient.
 
 After preparing the documented development dependencies on the board:

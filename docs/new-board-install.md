@@ -365,6 +365,12 @@ SUBSYSTEM=="dma_heap", KERNEL=="system", GROUP="video", MODE="0660"
 
 Windows 运行 `mstsc`，填写 **新板实际 IP**（默认 3389，也可显式加 `:3389`），用普通 Linux 用户及其密码登录，选择 **Xorg**。第一次连接会提示自签证书，核对目标板。也可复制 [RDP 示例](../rk3576/RK3576-optimized.rdp)，把 `full address` 和 `username` 改成新板信息；示例使用不可解析的地址且不包含用户名。
 
+默认使用 **1920×1080** 的 [RDP 连接模板](../rk3576/RK3576-optimized.rdp)。它以窗口模式启动，设置 `desktopwidth:i:1920`、`desktopheight:i:1080`、`dynamic resolution:i:0`、`smart sizing:i:1`，因此调整本地窗口大小只缩放画面，不会自动把远程桌面升为 1440p/4K。需要其他分辨率时，右键连接文件选择“编辑”，调整“显示”选项后重连，或直接编辑宽高；若希望分辨率随窗口变化，可自行把 `dynamic resolution` 改为 `1`。属性含义见 [Microsoft RDP 属性说明](https://learn.microsoft.com/en-us/azure/virtual-desktop/rdp-properties#display-settings)。
+
+这是连接配置的默认值，不是服务端强制上限。直接只输入 IP，或者使用其他客户端已有的全屏设置，仍可能请求其他分辨率。服务继续协商客户端请求的尺寸，无需改编码器或重启服务。
+
+该模板已通过独立 FreeRDP 客户端的实际 1080p 协商及 MPP 硬编码检查，见 [1080p 验证记录](validation/2026-10-13-1080p.md)。
+
 防火墙已启用时，仅向需要的局域网放行 3389/TCP；不要直接关闭防火墙。桌面密码由系统账号管理，教程不会设置固定密码。若同一用户已在 HDMI 本地桌面登录，先退出本地会话或使用独立办公账号，避免桌面会话冲突。
 
 在 **RDP 桌面的终端**执行：
@@ -431,7 +437,7 @@ printf 'Source ready for build: %s\n' "$SHA"
 
 按第 5 节重新运行 CMake 配置和构建，然后重新载入 `build/install-env.sh`；当前 SHA 会用于两部分的版本目录。首次安装器会拒绝覆盖现有实例；目前没有经空白板与升级场景完整验收的一键升级工具。
 
-切换已安装版本前，安排会话中断窗口并备份 `/etc/xrdp-rkmpp/`、两个 unit 及其 drop-in 配置。需要成对部署新 XRDP/Xorg 前缀，更新两个 unit 的 `ExecStart`、`sesman.ini` 中的 Xorg `-modulepath` 和动画程序，保留现有证书、PAM、用户与日常配置；先完成独立测试，再重新执行实际 RDP 验收。将旧前缀和配置保存为可验证的回退归档；验收通过且无进程引用后清除旧安装前缀，只保留一套启用的服务，更新 `source-commit`。不要用首次安装块覆盖运行中的实例。
+切换已安装版本前，安排会话中断窗口并备份 `/etc/xrdp-rkmpp/`、两个 unit 及其 drop-in 配置。需要成对部署新 XRDP/Xorg 前缀，更新两个 unit 的 `ExecStart`、`sesman.ini` 中的 Xorg `-modulepath` 和动画程序，保留现有证书、PAM、用户与日常配置；先完成独立测试，再重新执行实际 RDP 验收。切换期间可临时保留经过校验的回退归档；验收通过且无进程引用后清除旧安装前缀。维护者明确不再需要时，同时删除旧归档，不另建归档副本；只保留一套启用的服务，更新 `source-commit`。不要用首次安装块覆盖运行中的实例。
 
 ## 11. 排错、停用和后续维护
 
